@@ -1,23 +1,34 @@
-# Entorno virtual
-env/
-venv/
-.env
-
-# Archivos de caché Python
+# Byte-compiled / optimized / DLL files
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
 
-# Archivos de base de datos
-*.sqlite3
+# Virtual environment
+.env
+venv/
+ENV/
+env/
 
-# Archivos temporales o locales
+# Django stuff
 *.log
-*.sock
+*.pot
+*.pyc
+*.pyo
+*.db
+*.sqlite3
+*.sqlite3-journal
+db.sqlite3
 
-# Archivos generados
+# Generated assets
 media/
 staticfiles/
 
-# Configuración de IDE
+# IDEs / editors
 .vscode/
+.idea/
+*.swp
+
+# (Opcional) Si NO querés versionar migrations, descomenta estas dos
+# apps/**/migrations/*.py
+# !apps/**/migrations/__init__.py
 

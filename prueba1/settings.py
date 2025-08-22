@@ -33,6 +33,12 @@ ALLOWED_HOSTS = ['*']
 
 # -------------------------------------------------------------------------------------
 
+AUTHENTICATION_BACKENDS = [
+    "apps.blog_auth.backends.DNIBackend",    # <— nuestro backend por DNI
+    "django.contrib.auth.backends.ModelBackend",
+]
+
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",

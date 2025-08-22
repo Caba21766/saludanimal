@@ -370,16 +370,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
 <!-- Mostrar datos de Clientes------------------------------------------------------- -->
     {% if messages %}
-    <div style="display: flex; justify-content: center; align-items: center; text-align: center; margin-top: 20px;">
-        <div style="width: 50%;">
-            {% for message in messages %}
-                <div class="alert alert-danger">
-                    {{ message }}
-                </div>
-            {% endfor %}
+    {% for message in messages %}
+        {% if "factura" in message.tags %}
+        <div class="alert alert-danger">
+            {{ message }}
         </div>
-    </div>
+        {% endif %}
+    {% endfor %}
     {% endif %}
+
     <hr>
     <div style="display: flex; gap: 20px; justify-content: flex-start;">
         <!-- Primera columna -->

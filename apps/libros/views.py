@@ -1,62 +1,69 @@
-from django.shortcuts import render
 from datetime import datetime
-from django.db.models import Sum, F
-from apps.CarritoApp.models import Factura, CuentaCorriente
-from django.db.models import Sum, F, Q
+from decimal import Decimal
+
+from django.db.models import Q, Sum, Value, DecimalField
+from django.db.models.functions import Coalesce
+from django.shortcuts import render
+
+from apps.CarritoApp.models import Factura, CuentaCorriente, MetodoPago
 
 def listar_ctacorriente(request):
-    dni_cliente = request.GET.get('dni_cliente', '').strip()
-    fecha = request.GET.get('fecha', '').strip()
+    dni_cliente = (request.GET.get('dni_cliente') or '').strip()
+    fecha = (request.GET.get('fecha') or '').strip()
+
+    base_qs = Factura.objects.filter(
+        Q(metodo_pago__tarjeta_nombre__iexact="Cuenta Corriente") |
+        Q(metodo_pago_manual__iexact="Cuenta Corriente")
+    ).select_related('metodo_pago')
 
     if request.user.is_staff:
-        facturas = Factura.objects.filter(
-            Q(metodo_pago__tarjeta_nombre__iexact="Cuenta Corriente") |
-            Q(metodo_pago_manual__iexact="Cuenta Corriente")
-        )
+        facturas = base_qs
         if dni_cliente:
             facturas = facturas.filter(dni_cliente=dni_cliente)
     else:
-        facturas = Factura.objects.filter(
-            Q(metodo_pago__tarjeta_nombre__iexact="Cuenta Corriente") |
-            Q(metodo_pago_manual__iexact="Cuenta Corriente"),
-            dni_cliente=request.user.dni_usuario
-        )
+        facturas = base_qs.filter(dni_cliente=getattr(request.user, "dni_usuario", None))
 
-
-    # Resto del código sin cambios...
-    # 🔹 Filtrar por fecha si se ingresa
     if fecha:
         try:
-            fecha_inicio = datetime.strptime(fecha, "%Y-%m-%d")
-            fecha_fin = fecha_inicio.replace(hour=23, minute=59, second=59)
-            facturas = facturas.filter(fecha__range=[fecha_inicio, fecha_fin])
+            ini = datetime.strptime(fecha, "%Y-%m-%d")
+            fin = ini.replace(hour=23, minute=59, second=59)
+            facturas = facturas.filter(fecha__range=[ini, fin])
         except ValueError:
-            print("⚠ ERROR: Formato de fecha inválido.")
+            pass
 
-    # 🔹 Ordenar facturas de más reciente a más antigua
     facturas = facturas.order_by('-numero_factura')
 
-    # 🔹 Calcular la suma de pagos por factura
-    pagos_por_factura = {
-        factura.id: CuentaCorriente.objects.filter(factura=factura).aggregate(
-            total=Sum(F('imp_cuota_pagadas') + F('entrega_cta'))
-        )['total'] or 0
-        for factura in facturas
-    }
+    # 👉 Valor cero decimal para Coalesce
+    ZERO = Value(Decimal('0.00'),
+                 output_field=DecimalField(max_digits=12, decimal_places=2))
 
-    # 🔹 Calcular la deuda restante por factura
-    deuda_por_factura = {
-        factura.id: factura.total_con_interes - pagos_por_factura.get(factura.id, 0)
-        for factura in facturas
-    }
+    pagos_por_factura = {}
+    for f in facturas:
+        agg = CuentaCorriente.objects.filter(factura=f).aggregate(
+            cuotas=Coalesce(Sum('imp_cuota_pagadas'), ZERO),
+            entregas=Coalesce(Sum('entrega_cta'), ZERO),
+        )
+        total_pagado = (agg['cuotas'] or Decimal('0')) + (agg['entregas'] or Decimal('0'))
+        pagos_por_factura[f.id] = total_pagado
 
-    # 🔹 Filtrar facturas que realmente tienen deuda
-    facturas = [factura for factura in facturas if deuda_por_factura.get(factura.id, 0) > 0]
+    deuda_por_factura = {}
+    for f in facturas:
+        total = Decimal(getattr(f, 'total_con_interes', 0) or 0)
+        pagado = pagos_por_factura.get(f.id, Decimal('0'))
+        deuda = total - pagado
+        if deuda < 0:
+            deuda = Decimal('0')
+        deuda_por_factura[f.id] = deuda
 
-    # 🔹 Calcular los totales generales
-    total_general = sum(factura.total_con_interes for factura in facturas)
-    total_pagos = sum(pagos_por_factura.get(factura.id, 0) for factura in facturas)
-    total_deuda = sum(deuda_por_factura.get(factura.id, 0) for factura in facturas)
+    facturas = [f for f in facturas if deuda_por_factura.get(f.id, Decimal('0')) > 0]
+
+    total_general = sum(Decimal(getattr(f, 'total_con_interes', 0) or 0) for f in facturas)
+    total_pagos   = sum(pagos_por_factura.get(f.id, Decimal('0')) for f in facturas)
+    total_deuda   = sum(deuda_por_factura.get(f.id, Decimal('0')) for f in facturas)
+
+    metodos_pago = MetodoPago.objects.exclude(
+        tarjeta_nombre__iexact="Cuenta Corriente"
+    ).order_by('tarjeta_nombre')
 
     return render(request, 'libros/listar_ctacorriente.html', {
         'facturas': facturas,
@@ -65,7 +72,9 @@ def listar_ctacorriente(request):
         'total_deuda': total_deuda,
         'pagos_por_factura': pagos_por_factura,
         'deuda_por_factura': deuda_por_factura,
+        'metodos_pago': metodos_pago,
     })
+
 
 
 
@@ -126,7 +135,8 @@ def mostrar_factura_cta(request, factura_id):
 #------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------
-from django.shortcuts import render, get_object_or_404, redirect
+
+from django.shortcuts import render, get_object_or_404
 from django.db.models import Sum
 from django.utils.timezone import now
 from decimal import Decimal
@@ -137,46 +147,36 @@ def pago_credito(request, factura_id):
     factura = get_object_or_404(Factura, id=factura_id)
     cuenta_corriente = CuentaCorriente.objects.filter(factura=factura)
 
-    # ✅ Se define `total_pagos` ANTES del if para evitar el error
+    # Totales previos
     total_pagos_data = cuenta_corriente.aggregate(
         total_cuotas=Sum('imp_cuota_pagadas', default=Decimal(0)),
         total_entregas=Sum('entrega_cta', default=Decimal(0))
     )
     total_pagos = (total_pagos_data['total_cuotas'] or Decimal(0)) + (total_pagos_data['total_entregas'] or Decimal(0))
-    total_deuda = max(Decimal("0.00"), factura.total_con_interes - total_pagos)
+    total_deuda = max(Decimal("0.00"), (factura.total_con_interes or Decimal(0)) - total_pagos)
 
-    #------------- Suma de cuotas pagadas ----------------
-    # 1. Obtener la cantidad de cuotas que se están pagando en este envío
+    # ----- Suma de cuotas pagadas (tracking de cuotas) -----
     cantidad_cuotas = Decimal(request.POST.get("cantidad_cuotas", "1") or "1")
-
-    # 2. Sumar todas las cuotas pagadas anteriormente de la misma factura
     cuotas_anteriores = CuentaCorriente.objects.filter(
         factura=factura
     ).aggregate(suma_total=Sum('cuota_paga'))['suma_total'] or Decimal("0.00")
-
-    # 3. Calcular la suma total actualizada de cuotas pagadas
     suma_actualizada = cuotas_anteriores + cantidad_cuotas
-
-    # 4. Obtener el total de cuotas que tiene la factura
     cuota_total = Decimal(factura.cuotas or 0)
-
-    # 5. Calcular cuántas cuotas quedan por pagar
     cuota_debe = max(Decimal("0.00"), cuota_total - suma_actualizada)
-    #------------- fin Suma de cuotas pagadas ----------------
+    # -------------------------------------------------------
 
     if request.method == "POST":
-        print("📌 Datos recibidos en Django:", request.POST)  # Debugging para ver los datos
+        print("📌 Datos recibidos en Django:", request.POST)
 
-        tipo_pago = request.POST.get("tipo_pago")
-        metodo_pago_id = request.POST.get("metodo_pago")  # Puede ser un ID o "Efectivo"
-        monto_pagado = Decimal(request.POST.get("monto_pagado", "0") or "0")
-        tarjeta_nombre = request.POST.get("tarjeta_nombre", "").strip()
-        tarjeta_numero = request.POST.get("tarjeta_numero", "").strip()
-        monto_pagado = Decimal(request.POST.get("monto_pagado", "0") or "0")
-        imp_cuota_pagadas = Decimal(request.POST.get("imp_cuota_pagadas", "0") or "0")
+        tipo_pago = request.POST.get("tipo_pago")  # "cuota" | "entrega"
+        metodo_pago_id = request.POST.get("metodo_pago")  # ID o "Efectivo"
+
+        # Datos comunes
+        tarjeta_nombre = (request.POST.get("tarjeta_nombre") or "").strip()
+        tarjeta_numero = (request.POST.get("tarjeta_numero") or "").strip()
         interes_aplicado = Decimal(request.POST.get("interes_aplicado", "0") or "0")
 
-        # ✅ Si el método de pago es "Efectivo", no lo buscamos en la base de datos
+        # Resolver método de pago (FK) si no es efectivo
         if metodo_pago_id == "Efectivo":
             metodo_pago = None
         else:
@@ -185,37 +185,31 @@ def pago_credito(request, factura_id):
             except (ValueError, MetodoPago.DoesNotExist):
                 return JsonResponse({"success": False, "error": "Método de pago no válido."})
 
-        # Validar tipo de pago y asignar valores correctos
+        # Normalización según tipo de pago (LIMPIA, sin duplicados)
         if tipo_pago == "cuota":
+            # cuántas cuotas paga y cuánto representa en dinero
+            cantidad_cuotas = Decimal(request.POST.get("cantidad_cuotas", "1") or "1")
+            monto_por_cuota = factura.cuota_mensual or (
+                (factura.total_con_interes or Decimal(0)) / Decimal(factura.cuotas or 1)
+            )
+            imp_cuota_pagadas = (monto_por_cuota * cantidad_cuotas)
             entrega_cta = Decimal(0)
-
-            # ✅ NUEVO: calcular cuántas cuotas paga
-            cantidad_cuotas = Decimal(request.POST.get("cantidad_cuotas", "1") or "1")
-            monto_por_cuota = factura.cuota_mensual or (factura.total_con_interes / Decimal(factura.cuotas or 1))
-
-            imp_cuota_pagadas = monto_por_cuota * cantidad_cuotas
             cuota_paga = cantidad_cuotas
-            monto_pagado = imp_cuota_pagadas
-
-            # ✅ NUEVO: calcular cuántas cuotas paga
-            cantidad_cuotas = Decimal(request.POST.get("cantidad_cuotas", "1") or "1")
-            monto_por_cuota = factura.cuota_mensual or (factura.total_con_interes / Decimal(factura.cuotas or 1))
-
-            imp_cuota_pagadas = monto_por_cuota * cantidad_cuotas
-            cuota_paga = cantidad_cuotas
-            monto_pagado = imp_cuota_pagadas
+            monto_pagado = imp_cuota_pagadas  # lo que efectivamente paga ahora
         else:
+            # entrega a cuenta (no suma cuota)
+            monto_pagado = Decimal(request.POST.get("monto_pagado", "0") or "0")
             imp_cuota_pagadas = Decimal(0)
             entrega_cta = monto_pagado
-            cuota_paga = 0  # En entrega, no se suma cuota
+            cuota_paga = Decimal(0)
 
-        # Verificar que el monto no supere la deuda
-        if total_pagos + monto_pagado > factura.total_con_interes:
+        # Validación de sobrepago
+        if total_pagos + (monto_pagado or Decimal(0)) > (factura.total_con_interes or Decimal(0)):
             return JsonResponse({"success": False, "error": "El pago ingresado excede la deuda."})
 
         print(f"🛠️ imp_cuota_pagadas antes de guardar: {imp_cuota_pagadas}")
-        
-        # Guardar pago en la base de datos
+
+        # Guardar movimiento
         CuentaCorriente.objects.create(
             factura=factura,
             numero_factura=factura.numero_factura,
@@ -224,9 +218,8 @@ def pago_credito(request, factura_id):
             fecha_cuota=now().date(),
             imp_cuota_pagadas=imp_cuota_pagadas,
             entrega_cta=entrega_cta,
-            metodo_pago=metodo_pago,  # Esto sí se guarda si querés auditar cómo pagó
-            tarjeta_nombre="Cuenta Corriente",  # ❗ SIEMPRE así para mantener el método original
-            
+            metodo_pago=metodo_pago,           # auditoría
+            tarjeta_nombre="Cuenta Corriente", # mantener etiqueta del método original
             tarjeta_numero=tarjeta_numero if metodo_pago else None,
             cuota_total=factura.cuotas,
             cuota_paga=cuota_paga,
@@ -235,25 +228,23 @@ def pago_credito(request, factura_id):
             interes_aplicado=interes_aplicado,
         )
 
-        # ✅ Recalcular total pagado después de guardar el nuevo pago
-        nuevo_total_pagado = CuentaCorriente.objects.filter(factura=factura).aggregate(
+        # Recalcular totales luego del alta
+        nuevo_total = CuentaCorriente.objects.filter(factura=factura).aggregate(
             total_cuotas=Sum('imp_cuota_pagadas', default=Decimal(0)),
             total_entregas=Sum('entrega_cta', default=Decimal(0))
         )
-        total_pagado_final = (nuevo_total_pagado['total_cuotas'] or 0) + (nuevo_total_pagado['total_entregas'] or 0)
+        total_pagado_final = (nuevo_total['total_cuotas'] or Decimal(0)) + (nuevo_total['total_entregas'] or Decimal(0))
 
-
-
-        if total_pagado_final >= factura.total_con_interes:
+        # Cerrar crédito si corresponde (SIN doble seteo)
+        if total_pagado_final >= (factura.total_con_interes or Decimal(0)):
             factura.estado_credito = "Pagado"
 
-            # ✅ No cambiar nunca el método de pago si se trata de cuenta corriente
-            if factura.metodo_pago_manual == "Cuenta Corriente" or \
-            (factura.metodo_pago and factura.metodo_pago.tarjeta_nombre == "Cuenta Corriente"):
-                pass  # 👉 mantenemos "Cuenta Corriente"
-
-            else:
-                # Solo si era una entrega en efectivo total y no era cuenta corriente original
+            # Mantener "Cuenta Corriente" si originalmente lo era
+            if not (
+                factura.metodo_pago_manual == "Cuenta Corriente" or
+                (factura.metodo_pago and factura.metodo_pago.tarjeta_nombre == "Cuenta Corriente")
+            ):
+                # Si se saldó con entrega en efectivo exacta y no era CC
                 if tipo_pago == "entrega" and metodo_pago_id == "Efectivo" and monto_pagado == factura.total_con_interes:
                     factura.metodo_pago = None
                     factura.metodo_pago_manual = "Efectivo"
@@ -263,44 +254,33 @@ def pago_credito(request, factura_id):
 
             factura.save()
 
-
-        
-
-
-
-
-            # 👇 Este bloque se aplica SIEMPRE si la deuda se saldó
-            factura.estado_credito = "Pagado"
-            factura.save()
-
         return JsonResponse({"success": True, "message": "Pago registrado con éxito."})
 
-    # ✅ Cálculos para mostrar cuotas pagadas y restantes
-    total_cuotas_pagadas = cuenta_corriente.aggregate(
-    suma=Sum('cuota_paga')
-    )['suma'] or 0
-
-
+    # GET: datos para renderizar
+    total_cuotas_pagadas = cuenta_corriente.aggregate(suma=Sum('cuota_paga'))['suma'] or 0
     cuotas_restantes = max(0, (factura.cuotas or 0) - total_cuotas_pagadas)
-    # Recalcular después de posibles cambios
+
     nuevo_total_pagado = CuentaCorriente.objects.filter(factura=factura).aggregate(
         total_cuotas=Sum('imp_cuota_pagadas', default=Decimal(0)),
         total_entregas=Sum('entrega_cta', default=Decimal(0))
     )
     total_pagado_final = (nuevo_total_pagado['total_cuotas'] or Decimal(0)) + (nuevo_total_pagado['total_entregas'] or Decimal(0))
+    estado_credito = "Pagado" if total_pagado_final >= (factura.total_con_interes or Decimal(0)) else "Pendiente"
 
-    estado_credito = "Pagado" if total_pagado_final >= factura.total_con_interes else "Pendiente"
     metodos_pago = MetodoPago.objects.all()
     return render(request, "libros/pago_credito.html", {
         "factura": factura,
-        "total_pagos": total_pagos,  # ✅ Ahora `total_pagos` siempre tiene un valor
+        "total_pagos": total_pagos,
         "total_deuda": total_deuda,
         "metodos_pago": metodos_pago,
         "total_cuotas_pagadas": total_cuotas_pagadas,
         "cuotas_restantes": cuotas_restantes,
-        "estado_credito": estado_credito,  # 👈 NUEVO
-        
+        "estado_credito": estado_credito,
     })
+
+
+
+
 
 #------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------

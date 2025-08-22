@@ -16,6 +16,7 @@
                         <th>N° Factura</th>
                         <th>Fecha</th>
                         <th>Método de Pago</th>
+                        <th>Factura</th>
                         <th>Total</th>
                         <th>Acciones</th>
                     </tr>
@@ -25,7 +26,29 @@
                     <tr>
                         <td>{{ factura.numero_factura }}</td>
                         <td>{{ factura.fecha }}</td>
-                        <td>{{ factura.metodo_pago }}</td>
+                        <td>
+                            {% if factura.metodo_pago %}
+                                {{ factura.metodo_pago.tarjeta_nombre }}
+                                {% if factura.tarjeta_numero %}(****{{ factura.tarjeta_numero|slice:"-4:" }}){% endif %}
+                            {% else %}
+                                {{ factura.metodo_pago_manual|default:"Efectivo" }}
+                            {% endif %}
+                            </td>
+                        <td>
+                            {% with m1=factura.metodo_pago.tarjeta_nombre|default:"" %}
+                            {% with m2=factura.metodo_pago_manual|default:"" %}
+                                {% if m1|lower == "cuenta corriente" or m2|lower == "cuenta corriente" %}
+                                {% if factura.estado_credito_real == "Pagado" %}
+                                    <span class="text-success fw-bold">Pagado</span>
+                                {% else %}
+                                    <span class="text-danger fw-bold">Pendiente</span>
+                                {% endif %}
+                                {% else %}
+                                <span class="text-success fw-bold">Pagado</span>
+                                {% endif %}
+                            {% endwith %}
+                            {% endwith %}  
+                        </td>
                         <td>${{ factura.total|floatformat:2 }}</td>
                         <td>
                             <a href="{% url 'CarritoApp:vista_resumen_factura' factura.id %}" class="btn btn-success btn-sm"><i class="bi bi-eye"></i> Ver </a>

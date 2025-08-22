@@ -7,122 +7,421 @@
 {% endblock %}
 
 {% block contenido %}
-  
-    <header>
-        <hr>
-        <h1>Cuentas Corrientes1</h1>
-    </header>
-    
-    <main>
+<header>
+  <hr>
+  <h1>Cuenta Corriente</h1>
+</header>
+
+<main>
+  {% if user.is_staff %}
+  <form method="GET" style="margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border: 1px solid #ccc; border-radius: 10px; display: flex; flex-wrap: wrap; gap: 15px; align-items: center;">
+    <div style="display: flex; flex-direction: column;">
+      <label for="dni_cliente" style="font-weight: bold; color: #0b2c4e;">DNI Cliente:</label>
+      <input type="text" name="dni_cliente" id="dni_cliente"
+             value="{{ request.GET.dni_cliente|default_if_none:'' }}"
+             style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px;">
+    </div>
+
+    <div style="display: flex; flex-direction: column;">
+      <label for="fecha" style="font-weight: bold; color: #0b2c4e;">Fecha:</label>
+      <input type="date" name="fecha" id="fecha"
+             style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px;">
+    </div>
+
+    <div style="display: flex; gap: 10px; margin-top: 22px;">
+      <button type="submit"
+              style="background-color: #0b2c4e; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+        Filtrar
+      </button>
+
+      <a href="{% url 'libros:listar_ctacorriente' %}" style="text-decoration: none;">
+        <button type="button"
+                style="background-color: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+          Limpiar
+        </button>
+      </a>
+    </div>
+  </form>
+  {% endif %}
+
+  {% if facturas %}
+  <table border="1" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+    <thead>
+      <tr style="background-color: #f2f2f2;">
+        <th style="padding: 8px;">Factura Nº</th>
+        <th style="padding: 8px;">DNI</th>
+        <th style="padding: 8px;">Cliente</th>
+        <th style="padding: 8px;">Total</th>
+        <th style="padding: 8px;">Fecha</th>
+        <th style="padding: 8px;">Pagos</th>
+        <th style="padding: 8px;">Debe</th>
         {% if user.is_staff %}
-        <form method="GET" style="margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border: 1px solid #ccc; border-radius: 10px; display: flex; flex-wrap: wrap; gap: 15px; align-items: center;">
-  
-            <div style="display: flex; flex-direction: column;">
-              <label for="dni_cliente" style="font-weight: bold; color: #0b2c4e;">DNI Cliente:</label>
-              <input type="text" name="dni_cliente" id="dni_cliente"
-                     value="{{ request.GET.dni_cliente|default_if_none:'' }}"
-                     style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px;">
-            </div>
-          
-            <div style="display: flex; flex-direction: column;">
-              <label for="fecha" style="font-weight: bold; color: #0b2c4e;">Fecha:</label>
-              <input type="date" name="fecha" id="fecha"
-                     style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px;">
-            </div>
-          
-            <div style="display: flex; gap: 10px; margin-top: 22px;">
-              <button type="submit"
-                      style="background-color: #0b2c4e; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
-                Filtrar
-              </button>
-          
-              <a href="{% url 'libros:listar_ctacorriente' %}" style="text-decoration: none;">
-                <button type="button"
-                        style="background-color: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
-                  Limpiar
-                </button>
-              </a>
-            </div>
-          </form>
-          
-
+        <th style="padding: 8px;">Acciones</th>
         {% endif %}
-        {% if facturas %}
-        <table border="1" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
-            <thead>
-                <tr style="background-color: #f2f2f2;">
-                    <th style="padding: 8px;">Factura Nº</th>
-                    <th style="padding: 8px;">DNI</th>
-                    <th style="padding: 8px;">Cliente</th>
-                    <th style="padding: 8px;">Total</th>
-                    <th style="padding: 8px;">Fecha</th>
-                    <th style="padding: 8px;">Pagos</th>
-                    <th style="padding: 8px;">Debe</th>
-                    {% if user.is_staff %}
-                    <th style="padding: 8px;">Acciones</th>
-                    {% endif %}
-                </tr>
-            </thead>
+      </tr>
+    </thead>
 
+    <tbody>
 {% for factura in facturas %}
-    {% with metodo1=factura.metodo_pago.tarjeta_nombre|default:"" %}
-    {% with metodo2=factura.metodo_pago_manual|default:"" %}
-        {% if metodo1|lower == "cuenta corriente" or metodo2|lower == "cuenta corriente" %}
-            {% with cuenta_corriente=factura.cuentacorriente_set.last %}
-                <tr>
-                    <td>{{ factura.numero_factura }}</td>
-                    <td>{{ factura.dni_cliente }}</td>
-                    <td>{{ factura.nombre_cliente }} {{ factura.apellido_cliente }}</td>
-                    <td>${{ factura.total_con_interes }}</td>
-                    <td>{{ factura.fecha }}</td>
-                    <td>${{ pagos_por_factura|get_item:factura.id|default:"0.00" }}</td>
-                    <td>${{ deuda_por_factura|get_item:factura.id|floatformat:2|default:"0.00" }}</td>
-                    <td>
-                        {% if user.is_staff %}
-                        <a href="{% url 'libros:pago_credito' factura.id %}">
-                            <button style="background-color: #11530f; color: white;">Pago Crédito</button>
-                        </a>
-                        {% endif %}
-                        <a href="{% url 'libros:generar_pdf_credito' factura.id %}">
-                            <button style="background-color: #061322; color: white;">PDF</button>
-                        </a>
-                    </td>
-                </tr>
-            {% endwith %}
-        {% endif %}
-    {% endwith %}
-    {% endwith %}
+  {% with metodo1=factura.metodo_pago.tarjeta_nombre|default:"" %}
+  {% with metodo2=factura.metodo_pago_manual|default:"" %}
+  {% if metodo1|lower == "cuenta corriente" or metodo2|lower == "cuenta corriente" %}
+  {% with cuenta_corriente=factura.cuentacorriente_set.last %}
+      <!-- Fila con data-debe para que JS pueda repartir la entrega -->
+      <tr class="fila-cc"
+          data-factura="{{ factura.numero_factura }}"
+          data-debe="{{ deuda_por_factura|get_item:factura.id|default:'0' }}">
+        <td>{{ factura.numero_factura }}</td>
+        <td>{% firstof factura.dni_cliente "-" %}</td>
+        <td>{{ factura.nombre_cliente }} {{ factura.apellido_cliente }}</td>
+        <td>${{ factura.total_con_interes }}</td>
+        <td>{{ factura.fecha }}</td>
+        <td>${{ pagos_por_factura|get_item:factura.id|default:"0.00" }}</td>
+        <td>
+          <span class="debe-original">
+            ${{ deuda_por_factura|get_item:factura.id|floatformat:2|default:"0.00" }}
+          </span>
+          <small class="queda-por-factura" style="margin-left:6px;color:#6c757d;"></small>
+        </td>
+        <td>
+          {% if user.is_staff %}
+          <a href="{% url 'libros:pago_credito' factura.id %}">
+            <button style="background-color:#11530f;color:#fff;">Pago Crédito</button>
+          </a>
+          {% endif %}
+          <a href="{% url 'libros:generar_pdf_credito' factura.id %}">
+            <button style="background-color:#061322;color:#fff;">PDF</button>
+          </a>
+        </td>
+      </tr>
+  {% endwith %}
+  {% endif %}
+  {% endwith %}
+  {% endwith %}
 {% endfor %}
+    </tbody>
 
-                
+    <tfoot>
+      <tr>
+        <th colspan="3" style="padding: 8px; text-align: right;">Total:</th>
+        <th style="padding: 8px;">${{ total_general }}</th>
+        <th colspan="4"></th>
+      </tr>
+      <tr>
+        <th colspan="3" style="padding: 8px; text-align: right;">Pagos:</th>
+        <th style="padding: 8px;">${{ total_pagos }}</th>
+        <th colspan="4"></th>
+      </tr>
+
+      <!-- Debe total (rojo) -->
+      <tr>
+        <th colspan="3" style="padding: 8px; text-align: right; color: #dc3545;">Debe:</th>
+        <th id="td_total_deuda" style="padding: 8px; color:#dc3545;">
+          <span id="lbl_total_deuda">${{ total_deuda }}</span>
+        </th>
+        <th colspan="4"></th>
+      </tr>
+
+      <!-- Input de entrega y “Queda” total -->
+      {% if user.is_staff %}
+      <tr>
+        <th colspan="3" style="padding:8px; text-align:right;">
+          <span style="color:#dc3545;">Entrega (restar al Debe):</span>
+        </th>
+        <th style="padding:8px;">
+          <input id="inp_entrega_deuda"
+                 type="number" min="0" step="0.01"
+                 placeholder="Ingrese entrega"
+                 style="width:160px; padding:6px 8px; border:1px solid #dc3545; border-radius:6px;">
+        </th>
+        <th colspan="4" style="padding:8px;">
+          <span>Queda:</span>
+          <strong id="lbl_queda_deuda">$0.00</strong>
+        </th>
+      </tr>
+      {% endif %}
+
+    </tfoot>
+  </table>
+  {% else %}
+    <p class="no-facturas">No hay facturas registradas con "Cuenta Corriente".</p>
+  {% endif %}
+</main>
+
+
+<!-- JS: resta al Debe rojo y reparte entre las filas mostrando “→ queda: $…” en cada factura -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const toNum = (v) => {
+    v = (v == null ? '' : String(v));
+    v = v.replace(/\$/g,'').replace(/\s+/g,'').replace(',', '.');
+    const n = parseFloat(v);
+    return isNaN(n) ? 0 : n;
+  };
+  const fmt = (n) => '$' + (toNum(n)).toFixed(2);
+
+  const $total = document.getElementById('lbl_total_deuda');
+  const $entrada = document.getElementById('inp_entrega_deuda');
+  const $quedaTotal = document.getElementById('lbl_queda_deuda');
+
+  // valor base del Debe (rojo)
+  const baseDebe = toNum($total?.textContent || 0);
+  $quedaTotal.textContent = fmt(baseDebe);
+
+  // filas con deudas por factura
+  const filas = Array.from(document.querySelectorAll('tbody tr.fila-cc'));
+
+  function repartir(entrega) {
+    // actualizar “Queda” total rojo
+    const usado = Math.min(entrega, baseDebe);
+    const quedaRojo = baseDebe - usado;
+    $quedaTotal.textContent = fmt(quedaRojo);
+
+    // recorrer de ABAJO hacia ARRIBA
+    let restante = usado;
+    filas.slice().reverse().forEach(tr => {
+      const debe = toNum(tr.dataset.debe || 0);
+      const aplicado = Math.min(restante, debe);
+      const quedaFila = debe - aplicado;
+
+      const celdaPreview = tr.querySelector('.queda-por-factura');
+      if (celdaPreview) {
+        celdaPreview.textContent = '→ queda: ' + fmt(quedaFila);
+      }
+
+      restante -= aplicado;
+    });
+
+    // si no hay entrega, mostrar originales
+    if (usado <= 0) {
+      filas.forEach(tr => {
+        const debe = toNum(tr.dataset.debe || 0);
+        const celdaPreview = tr.querySelector('.queda-por-factura');
+        if (celdaPreview) celdaPreview.textContent = '→ queda: ' + fmt(debe);
+      });
+    }
+  }
+
+  // init
+  repartir(0);
+
+  // evento input
+  if ($entrada) {
+    $entrada.addEventListener('input', () => {
+      let entrega = toNum($entrada.value);
+      if (entrega < 0) entrega = 0;
+      repartir(entrega);
+    });
+  }
+});
+</script>
+
+
+<!-- 🔽 Nuevo bloque de Pago/Entrega 🔽 -->
+ {% if user.is_staff %}
+<div style="margin-top:30px; padding:20px; border:1px solid #ccc; border-radius:8px; background:#f8f9fa;">
+  <h3 style="color:#0b2c4e;">Registrar Pago</h3>
+
+  <label for="metodo_pago_entrega"><strong>Pago:</strong></label>
+  <select name="metodo_pago" id="metodo_pago_entrega" required>
+      <option value="" disabled selected>Seleccione Pago</option>
+      <option value="Efectivo">Efectivo</option>
+      {% for metodo in metodos_pago %}
+          <option value="{{ metodo.id }}">{{ metodo.tarjeta_nombre }}</option>
+      {% endfor %}
+  </select>
+
+  <!-- Botón para efectivo -->
+   
+  <button type="button" id="boton_registrar_entrega"
+          class="btn btn-success mt-3" style="display: none;">
+      Registrar Entrega
+      <input type="hidden" id="entrega_cta_input" name="entrega_cta" value="">
+  </button>
+  {% endif %}
+
+</div>
+
+<!-- Modal exclusivo para entrega con tarjeta -->
+<div class="modal fade" id="entregaModal" tabindex="-1" aria-labelledby="entregaModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="entregaModalLabel" style="color: #0b2c4e; font-weight: bold;">Registrar Entrega</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="alert alert-info" id="metodo_pago_seleccionado_entrega">
+        Método de pago seleccionado: <strong id="texto_metodo_pago_entrega">-</strong>
+      </div>
+      <div class="modal-body">
+        <!-- Aquí va todo tu formulario de tarjeta, interés, cuotas, etc. -->
+        ...
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts de pago/entrega -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+      const metodoEntregaSelect = document.getElementById("metodo_pago_entrega");
+      const botonEntrega = document.getElementById("boton_registrar_entrega");
+      const entregaModal = new bootstrap.Modal(document.getElementById("entregaModal"));
+      const montoInput = document.getElementById("inp_entrega_deuda"); // 🔗 usa el input ya existente
+      const entregaInput = document.getElementById("entrega_cta_input");
+
+      metodoEntregaSelect.addEventListener("change", function () {
+          const seleccion = this.options[this.selectedIndex].text;
+          entregaInput.value = montoInput.value;
+
+          if (this.value === "Efectivo") {
+              botonEntrega.style.display = "inline-block";
+          } else {
+              botonEntrega.style.display = "none";
+              document.getElementById("suma_entrega").value = montoInput.value;
+              document.getElementById("texto_metodo_pago_entrega").textContent = seleccion;
+              entregaModal.show();
+          }
+      });
+
+      montoInput.addEventListener("input", () => {
+          entregaInput.value = montoInput.value;
+      });
+  });
+</script>
+<!-- 🔼 Fin del bloque de Pago/Entrega 🔼 -->
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const selMetodo = document.getElementById('metodo_pago_entrega');
+  const btnEfectivo = document.getElementById('boton_registrar_entrega');
+  const inpEntrega = document.getElementById('inp_entrega_deuda');
+
+  // --- helpers ---
+  const toNum = v => {
+    v = (v == null ? '' : String(v));
+    v = v.replace(/\$/g,'').replace(/\s+/g,'').replace(',','.');
+    const n = parseFloat(v);
+    return isNaN(n) ? 0 : n;
+  };
+
+  function getCookie(name) {
+    const m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+    return m ? m.pop() : '';
+  }
+
+  // Busca el id de factura en el href del botón "Pago Crédito" de esa fila
+  function getFacturaIdFromRow(tr) {
+    const a = tr.querySelector('a[href*="pago_credito"]');
+    if (!a) return null;
+    const href = a.getAttribute('href'); // ej: /libros/factura/123/pago_credito/
+    const m = href.match(/factura\/(\d+)\/pago_credito/);
+    return m ? m[1] : null;
+  }
+
+  // Distribuye de ABAJO hacia ARRIBA (como tu preview) el monto entre deudas por fila
+  function calcularDistribucion(montoTotal) {
+    let restante = montoTotal;
+    const distrib = [];
+    const filas = Array.from(document.querySelectorAll('tbody tr.fila-cc')).reverse();
+
+    for (const tr of filas) {
+      if (restante <= 0) break;
+      const debe = toNum(tr.dataset.debe || 0);
+      if (debe <= 0) continue;
+
+      const aplicar = Math.min(restante, debe);
+      const facturaId = getFacturaIdFromRow(tr);
+      if (!facturaId) continue;
+
+      distrib.push({ facturaId, aplicar });
+      restante -= aplicar;
+    }
+    return distrib;
+  }
+
+  // --- UI: mostrar/ocultar botón según método ---
+  selMetodo?.addEventListener('change', function () {
+    if (this.value === 'Efectivo') {
+      btnEfectivo.style.display = 'inline-block';
+    } else {
+      btnEfectivo.style.display = 'none';
+
+      // Si tenés el modal de tarjeta pegado, lo abrimos; si no, avisamos.
+      const modalEl = document.getElementById('entregaModal');
+      if (modalEl && typeof bootstrap !== 'undefined') {
+        const modal = new bootstrap.Modal(modalEl);
+        const txt = this.options[this.selectedIndex].text;
+        const sumaEntrega = document.getElementById('suma_entrega');
+        const montoActual = toNum(inpEntrega?.value || 0);
+        if (sumaEntrega) sumaEntrega.value = montoActual.toFixed(2);
+        const lbl = document.getElementById('texto_metodo_pago_entrega');
+        if (lbl) lbl.textContent = txt;
+        modal.show();
+      } else {
+        alert('Para tarjeta, usá el botón "Pago Crédito" de la factura que quieras imputar o pegá el modal completo.');
+        this.value = '';
+      }
+    }
+  });
+
+  // --- Acción: registrar ENTREGAS en efectivo repartiéndolo en varias facturas ---
+  btnEfectivo?.addEventListener('click', async () => {
+    const metodo = selMetodo?.value;
+    if (!metodo) { alert('Elegí un método de pago.'); return; }
+    if (metodo !== 'Efectivo') { alert('Este botón registra solo entregas en efectivo.'); return; }
+
+    const total = toNum(inpEntrega?.value || 0);
+    if (!total || total <= 0) { alert('Ingresá un monto válido.'); return; }
+
+    // Tomamos el Debe total rojo como tope
+    const lblTotal = document.getElementById('lbl_total_deuda');
+    const debeTotal = toNum(lblTotal?.textContent || 0);
+    const aUsar = Math.min(total, debeTotal);
+
+    const distribucion = calcularDistribucion(aUsar);
+    if (!distribucion.length) { alert('No hay deudas para imputar.'); return; }
+
+    const csrftoken = getCookie('csrftoken');
+
+    try {
+      for (const item of distribucion) {
+        const resp = await fetch(`/libros/factura/${item.facturaId}/pago_credito/`, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': csrftoken,
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: new URLSearchParams({
+            tipo_pago: 'entrega',
+            metodo_pago: 'Efectivo',                 // aquí va literal "Efectivo"
+            monto_pagado: item.aplicar.toFixed(2),  // lo que se aplica a esa factura
+            entrega_cta: item.aplicar.toFixed(2)    // lo mismo, para que el backend lo tome como entrega
+          })
+        });
+        const data = await resp.json();
+        if (!data.success) {
+          throw new Error(`Factura ${item.facturaId}: ${data.error || 'Error al guardar'}`);
+        }
+      }
+
+      // Abrimos el PDF de la última factura impactada (la de más abajo)
+      const ultima = distribucion[0]?.facturaId;
+      if (ultima) window.open(`/libros/generar_pdf_credito/${ultima}/`, '_blank');
+
+      // Refrescamos la pantalla para ver los saldos actualizados
+      setTimeout(() => location.reload(), 1200);
+
+    } catch (err) {
+      alert(`⚠️ ${err.message}`);
+      console.error(err);
+    }
+  });
+});
+</script>
 
 
 
-            </tbody>
-            
-            <tfoot>
-                <tr>
-                    <th colspan="3" style="padding: 8px; text-align: right;">Total:</th>
-                    <th style="padding: 8px;">${{ total_general }}</th>  
-                    <th colspan="4"></th>
-                </tr>
-                <tr>
-                    <th colspan="3" style="padding: 8px; text-align: right;">Pagos:</th>
-                    <th style="padding: 8px;">${{ total_pagos }}</th>  
-                    <th colspan="4"></th>
-                </tr>
-                <tr>
-                    <th colspan="3" style="padding: 8px; text-align: right; color: #dc3545;">Debe:</th>
-                    <th style="padding: 8px;">${{ total_deuda }}</th>  
-                    <th colspan="4"></th>
-                </tr>
-            </tfoot>
-           
-            
-        </table>
-        {% else %}
-        <p class="no-facturas">No hay facturas registradas con "Cuenta Corriente".</p>
-        {% endif %}
-    </main>
-    
+
 {% endblock %}

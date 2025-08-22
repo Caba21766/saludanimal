@@ -5,13 +5,16 @@ from django.contrib.auth.models import User
 from datetime import date, datetime
 from apps.CarritoApp.models import Factura, MetodoPago
 from django.contrib import messages
+
 from django.contrib.messages import get_messages
 from django.contrib.auth.decorators import login_required, permission_required
 
 @login_required
 @permission_required('CarritoApp.add_factura', raise_exception=True)
 def prueba(request):
-   
+      
+
+
     vendedor = request.user
     fecha_actual = date.today().strftime('%d/%m/%Y')
     hora = datetime.now().strftime('%H:%M:%S')  # ⬅️ AGREGADO
@@ -60,7 +63,14 @@ def prueba(request):
             domicilio_usuario = "No encontrado"
             cuil = "No encontrado"
             iva = "No encontrado"
-            messages.error(request, "Usuario no encontrado. Debe cargar un usuario existente.")
+
+            # 👉 Aquí sí agregás el mensaje, y con la tag "factura"
+            messages.error(
+                request,
+                "Usuario no encontrado. Debe cargar un usuario existente.",
+                extra_tags="factura"
+            )
+            
 
     # Obtener los métodos de pago
     metodos_pago = MetodoPago.objects.all()
@@ -170,6 +180,12 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction, IntegrityError
 from apps.CarritoApp.models import Factura, Producto
 from apps.CarritoApp.models import MetodoPago, Factura, Producto
+from django.urls import reverse
+from django.contrib.auth import get_user_model
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.db import transaction, IntegrityError
+from apps.CarritoApp.models import Factura, Producto, MetodoPago
 
 @csrf_exempt
 def guardar_prueba(request):
@@ -178,31 +194,55 @@ def guardar_prueba(request):
 
     try:
         data = json.loads(request.body)
+
         print("📨 Datos recibidos en la vista:", json.dumps(data, indent=2))
         print(f"📌 Domicilio recibido: {data.get('domicilio_factura', 'No recibido')}")
         print(f"📌 CUIL recibido: {data.get('cuil', 'No recibido')}")
         print(f"📌 IVA recibido: {data.get('iva', 'No recibido')}")
         print(f"📌 Método de pago: {data.get('metodo_pago', 'No recibido')}")
 
-      
-        # ✅ Soporte para "Efectivo" y "Cuenta Corriente" fijos
-        metodo_pago_nombre = data.get('metodo_pago', 'Efectivo')
-        if metodo_pago_nombre in ["Efectivo", "Cuenta Corriente"]:
-            metodo_pago_obj = None  # No se guarda como FK, pero sí el nombre
-        else:
-            metodo_pago_obj = MetodoPago.objects.filter(tarjeta_nombre=metodo_pago_nombre).first()
-            if not metodo_pago_obj:
-                return JsonResponse({'error': 'Método de pago inválido. Asegúrate de que esté registrado en la BD.'}, status=400)
+        # -------------------------------
+        # 1) RESOLVER DNI DEL CLIENTE
+        # -------------------------------
+        User = get_user_model()
 
+        dni_resuelto = (data.get('dni_cliente') or data.get('dni') or '').strip()
+
+        # a) si viene un cliente_id desde el front
+        if not dni_resuelto:
+            cliente_id = data.get('cliente_id')
+            if cliente_id:
+                try:
+                    cli = User.objects.get(id=cliente_id)
+                    dni_resuelto = getattr(cli, 'dni_usuario', '') or getattr(cli, 'dni', '')
+                except User.DoesNotExist:
+                    pass
+
+        # b) intentar por nombre / apellido (solo si no hay homónimos)
+        if not dni_resuelto:
+            nombre = (data.get('nombre_cliente') or '').strip()
+            apellido = (data.get('apellido_cliente') or '').strip()
+            if nombre and apellido:
+                cli = User.objects.filter(first_name=nombre, last_name=apellido).first()
+                if cli:
+                    dni_resuelto = getattr(cli, 'dni_usuario', '') or getattr(cli, 'dni', '')
+
+        # c) fallback: usuario logueado
+        if not dni_resuelto and request.user.is_authenticated:
+            dni_resuelto = getattr(request.user, 'dni_usuario', '') or ''
+
+        print(f"🆔 DNI que se guardará en la factura: {dni_resuelto!r}")
+
+        # -------------------------------
+        # 2) VALIDAR STOCK
+        # -------------------------------
         detalle_productos = data.get('detalle_productos', [])
         if not detalle_productos:
             return JsonResponse({'error': 'La factura no tiene productos. Por favor, cargue productos antes de guardar.'}, status=400)
 
-        # **Verificar stock antes de guardar**
         for detalle in detalle_productos:
             numero_producto = detalle.get('numero_producto')
             cantidad_vendida = detalle.get('cantidad_vendida')
-
             try:
                 producto = Producto.objects.get(numero_producto=numero_producto)
             except Producto.DoesNotExist:
@@ -211,76 +251,79 @@ def guardar_prueba(request):
             if producto.stock < cantidad_vendida:
                 return JsonResponse({'error': f'Stock insuficiente para el producto {producto.nombre_producto}.'}, status=400)
 
-        # **Obtener valores para la factura**
+        # -------------------------------
+        # 3) TOTAL CON INTERÉS
+        # -------------------------------
         total_con_interes = data.get('total_con_interes', None)
-
-        # **Si no se envió total_con_interes, usar total_con_descuento**
         if total_con_interes in [None, ""]:
             total_con_interes = data.get('total_con_descuento', 0)
 
-        # **Convertir a float**
         try:
             total_con_interes = float(total_con_interes)
-        except ValueError:
-            total_con_interes = 0  # Si hay un error, asignar 0
+        except (TypeError, ValueError):
+            total_con_interes = 0.0
 
         print(f"✅ total_con_interes procesado: {total_con_interes}")
 
-        # ✅ Obtener datos de la tarjeta si se elige un método de pago con tarjeta
+        # -------------------------------
+        # 4) MÉTODO DE PAGO
+        # -------------------------------
+        metodo_pago_nombre = data.get('metodo_pago', 'Efectivo')
         tarjeta_nombre = data.get('tarjeta_nombre', None)
         tarjeta_numero = data.get('tarjeta_numero', None)
 
-
-        # ✅ Buscar método de pago como instancia
         metodo_pago_obj = None
-        metodo_pago_nombre = data.get('metodo_pago', 'Efectivo')
-
         if metodo_pago_nombre not in ["Efectivo", "Cuenta Corriente"]:
             metodo_pago_obj = MetodoPago.objects.filter(tarjeta_nombre=metodo_pago_nombre).first()
             if not metodo_pago_obj:
                 return JsonResponse({'error': f'Método de pago "{metodo_pago_nombre}" no encontrado.'}, status=400)
 
-        # **Guardar la factura y actualizar el stock**
+        # -------------------------------
+        # 5) CREAR FACTURA + DESCONTAR STOCK
+        # -------------------------------
         with transaction.atomic():
             nueva_factura = Factura.objects.create(
                 fecha=data.get('fecha'),
-                dni_cliente=data.get('dni_cliente'),
+                # 👇 GUARDAMOS EL DNI RESUELTO
+                dni_cliente=dni_resuelto or None,
+
                 nombre_cliente=data.get('nombre_cliente'),
                 apellido_cliente=data.get('apellido_cliente', 'Desconocido'),
-                domicilio=data.get("domicilio_factura"),  # ✅ Aquí debe guardarse
-                cuil=data.get("cuil"),  # ✅ Aquí debe guardarse
-                iva=data.get("iva"),  # ✅ Aquí debe guardarse
-                metodo_pago=metodo_pago_obj,  # instancia FK o None
+                domicilio=data.get("domicilio_factura"),
+                cuil=data.get("cuil"),
+                iva=data.get("iva"),
+
+                metodo_pago=metodo_pago_obj,  # instancia FK (o None)
                 metodo_pago_manual=metodo_pago_nombre if metodo_pago_obj is None else None,
+
                 total=data.get('total', 0),
                 descuento=data.get('descuento', 0),
                 total_descuento=data.get('total_con_descuento', 0),
-                total_con_interes=total_con_interes,  # ✅ Guardar correctamente
-                cuota_mensual=float(data.get('cuota_mensual', 0)),  # 🆕 Guardamos la cuota mensual
+                total_con_interes=total_con_interes,
+                cuota_mensual=float(data.get('cuota_mensual', 0)),
                 detalle_productos=json.dumps(detalle_productos),
                 vendedor=request.user.get_full_name() if request.user.is_authenticated else 'Sin asignar',
                 cuotas=data.get('cuotas', 1),
                 interes=data.get('interes', 0),
-                tarjeta_nombre=tarjeta_nombre,  # ✅ Guardamos el nombre de la tarjeta
-                tarjeta_numero=tarjeta_numero,  # ✅ Guardamos el número de la tarjeta
-                numero_tiket=data.get('numero_tiket', None),  # ✅ Guardamos el número de ticket
+                tarjeta_nombre=tarjeta_nombre,
+                tarjeta_numero=tarjeta_numero,
+                numero_tiket=data.get('numero_tiket', None),
             )
 
-            # **Asignar número de factura**
+            # Asignar número de factura legible
             nueva_factura.numero_factura = str(nueva_factura.id).zfill(5)
-            nueva_factura.save()
+            nueva_factura.save(update_fields=['numero_factura'])
 
-            # **Actualizar stock de productos**
+            # Descontar stock
             for detalle in detalle_productos:
                 numero_producto = detalle.get('numero_producto')
                 cantidad_vendida = detalle.get('cantidad_vendida')
                 producto = Producto.objects.get(numero_producto=numero_producto)
                 producto.stock -= cantidad_vendida
-                producto.save()
+                producto.save(update_fields=['stock'])
 
         print(f"✅ Factura {nueva_factura.id} guardada con total_con_interes: {nueva_factura.total_con_interes}")
 
-        # Redireccionar al resumen de CarritoApp
         url_resumen = reverse('CarritoApp:resumen_factura', args=[nueva_factura.id])
         return JsonResponse({'redirect': url_resumen})
 
@@ -290,6 +333,11 @@ def guardar_prueba(request):
         return JsonResponse({'error': 'Error de integridad: posible duplicado.'}, status=400)
     except Exception as e:
         return JsonResponse({'error': f'Error interno: {str(e)}'}, status=500)
+
+
+
+
+
 
 
 #------------------Mostrar Factura con Botones--------------------------

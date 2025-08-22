@@ -207,6 +207,8 @@
                 <a href="{% url 'CarritoApp:subir_imagen_factura' m.id %}" class="btn btn-success btn-sm">
                   <i class="bi bi-upload"></i>
                 </a>
+
+                
                 {% if m.imagen_url %}
                 <a href="{% url 'CarritoApp:eliminar_imagen_factura' m.id %}" class="btn btn-danger btn-sm">
                   <i class="bi bi-trash"></i>
@@ -243,12 +245,17 @@
             <td><span class="text-muted">-</span></td>
             <td><span class="text-muted">-</span></td>
             <td>
-              {% if m.factura_id %}
-                <a href="{% url 'CarritoApp:vista_resumen_factura' m.factura_id %}" class="btn btn-outline-secondary btn-sm">
-                  <i class="bi bi-link-45deg"></i>
-                </a>
-              {% endif %}
-            </td>
+              <div class="d-flex flex-wrap gap-2 justify-content-start">
+                {% if m.factura_id %}
+                  <a href="{% url 'libros:generar_pdf_credito' m.factura_id %}"
+                    target="_blank" rel="noopener"
+                    class="btn btn-outline-secondary btn-sm"
+                    title="PDF Cuenta Corriente">
+                    <i class="bi bi-link-45deg"></i>
+                  </a>
+                {% endif %}
+              </div>
+          </td>
           </tr>
         {% endif %}
       {% endfor %}
