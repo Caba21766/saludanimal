@@ -228,7 +228,9 @@
               </div>
             </td>
           </tr>
-        <!-- cunta correinte facturas -->  
+        <!-- cunta correinte pago  -->  
+        <!-- cunta correinte pago  -->  
+        <!-- cunta correinte pago  -->  
         {% else %} {# m.tipo == 'pago' #}
           <tr class="table-success">
             <td>{{ m.numero }}</td>
@@ -246,21 +248,47 @@
             <td>-</td>
             <td>-</td>
             <td>${{ m.total|floatformat:2 }}</td>
-            <td><span class="text-muted">-</span></td>
-            <td><span class="text-muted">-</span></td>
             <td>
-              <div class="d-flex flex-wrap gap-2 justify-content-start">
-                <!-- Botones de acciones cuenta corriente verde-->  
-                {% if m.factura_id %}
-                  <a href="{% url 'libros:generar_pdf_credito' m.factura_id %}"
-                    target="_blank" rel="noopener"
-                    class="btn btn-outline-secondary btn-sm"
-                    title="PDF Cuenta Corriente">
-                    <i class="bi bi-link-45deg"></i>
-                  </a>
-                {% endif %}
-              </div>
-          </td>
+              {% if m.imagen_url %}
+                <img src="{{ m.imagen_url }}"
+                    alt="Comprobante de pago"
+                    class="img-thumbnail"
+                    style="max-width:100px; max-height:70px; object-fit:cover; cursor: zoom-in;">
+              {% else %}
+                <span class="text-muted">Sin imagen</span>
+              {% endif %}
+            </td>
+            <td><span class="text-muted">-</span></td>
+
+            <td>
+              <a href="{% url 'CarritoApp:subir_imagen_pago' m.id %}?next={{ request.get_full_path|urlencode }}"
+                class="btn btn-success btn-sm" title="Subir comprobante">
+                <i class="bi bi-upload"></i>
+              </a>
+
+              {% if m.imagen_url %}
+                <a href="{% url 'CarritoApp:eliminar_imagen_pago' m.id %}?next={{ request.get_full_path|urlencode }}"
+                  class="btn btn-danger btn-sm" title="Eliminar comprobante">
+                  <i class="bi bi-trash"></i>
+                </a>
+                <button type="button"
+                        class="btn btn-warning btn-sm view-factura"
+                        data-src="{{ m.imagen_url }}"
+                        title="Ver comprobante">
+                  <i class="bi bi-eye"></i>
+                </button>
+              {% endif %}
+            </td>
+
+
+
+
+
+
+
+
+
+
           </tr>
         {% endif %}
       {% endfor %}

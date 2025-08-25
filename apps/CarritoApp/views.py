@@ -833,12 +833,14 @@ def lista_cierre_de_caja(request):
             'orden': 0,           # para ordenar dentro del mismo día (0=factura, 1=pago). Cambiá si querés pagos primero.
         })
 
+
+    # Pagos cta cte -> movimientos
     # Pagos cta cte -> movimientos
     for p in pagos_cta_corriente:
         monto_pago = (p.imp_cuota_pagadas or 0) + (p.entrega_cta or 0)
         movimientos.append({
             'tipo': 'pago',
-            'fecha': p.fecha_cuota,  # Date o DateTime
+            'fecha': p.fecha_cuota,
             'numero': p.numero_factura,
             'dni': getattr(p.factura, 'dni_cliente', '') if p.factura_id else '',
             'cliente': (
@@ -851,12 +853,15 @@ def lista_cierre_de_caja(request):
             'tarjeta_numero': '-',
             'numero_tiket': '-',
             'total': monto_pago,
-            'imagen_url': '',
-            'id': p.id,               # id del pago
-            'factura_id': p.factura_id,  # para enlazar a la factura
+            'imagen_url': p.imagen_pago.url if getattr(p, 'imagen_pago', None) else '',
+            'id': p.id,
+            'factura_id': p.factura_id,
             'descripcion': getattr(p, 'descripcion', ''),
-            'orden': 1,               # ver nota de "orden" arriba
+            'orden': 1,
         })
+
+
+
 
     # Ordenar por fecha desc y, dentro del mismo día, por 'orden'
     # (reverse=True -> fechas más nuevas primero; y 1 > 0: pagos se muestran antes que facturas si ponés pago=1)
@@ -1265,8 +1270,39 @@ def subir_imagen_factura(request, factura_id):
         {'form': form, 'factura': factura, 'next': next_url},
     )
 
+#----------------------------------------------------------------#
+# apps/CarritoApp/views.py
+from django.shortcuts import get_object_or_404, render, redirect
+from django.urls import reverse
+from django.contrib import messages
+from .models import CuentaCorriente
+from .forms import SubirImagenPagoForm
+
+def subir_imagen_pago(request, pago_id):
+    pago = get_object_or_404(CuentaCorriente, pk=pago_id)
+    next_url = request.GET.get('next') or request.POST.get('next') or reverse('CarritoApp:listar_facturas')
+
+    if request.method == 'POST':
+        form = SubirImagenPagoForm(request.POST, request.FILES, instance=pago)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Comprobante guardado en el pago.')
+            return redirect(next_url)
+    else:
+        form = SubirImagenPagoForm(instance=pago)
+
+    return render(request, 'CarritoApp/subir_imagen_pago.html', {
+        'form': form, 'pago': pago, 'next': next_url
+    })
 
 
+def eliminar_imagen_pago(request, pago_id):
+    pago = get_object_or_404(CuentaCorriente, pk=pago_id)
+    next_url = request.GET.get('next') or reverse('CarritoApp:listar_facturas')
+    if pago.imagen_pago:
+        pago.imagen_pago.delete(save=True)
+        messages.success(request, 'Comprobante eliminado del pago.')
+    return redirect(next_url)
 
 
 

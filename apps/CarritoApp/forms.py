@@ -135,3 +135,12 @@ class MensajeClienteForm(forms.ModelForm):
         }
 
 
+# apps/CarritoApp/forms.py
+from django import forms
+from .models import CuentaCorriente
+
+class SubirImagenPagoForm(forms.ModelForm):
+    class Meta:
+        model = CuentaCorriente
+        fields = ['imagen_pago']
+        labels = {'imagen_pago': 'Comprobante (imagen)'}

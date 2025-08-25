@@ -218,7 +218,7 @@ class CuentaCorriente(models.Model):
     tarjeta_nombre = models.CharField(max_length=255, blank=True, null=True)
     tarjeta_numero = models.CharField(max_length=20, blank=True, null=True)
     interes_aplicado = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal(0))
-    #imagen_pago = models.ImageField(upload_to="pago_images/", blank=True, null=True)
+    imagen_pago = models.ImageField(upload_to="pago_images/", blank=True, null=True)
 
     def __str__(self):
         return f"Cuenta Corriente - Factura {self.numero_factura} - Estado: {self.estado_credito} - Pago: {self.metodo_pago}"

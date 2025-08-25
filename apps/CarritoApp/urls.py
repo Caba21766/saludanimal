@@ -121,6 +121,8 @@ urlpatterns = [
     path('lista-vendedor/', lambda r: redirect(reverse('CarritoApp:listar_facturas')), name='lista_vendedor'),
     path('listar_facturas/', views.lista_cierre_de_caja, name='listar_facturas'),
 
+    path('pago/<int:pago_id>/imagen/subir/', views.subir_imagen_pago, name='subir_imagen_pago'),
+    path('pago/<int:pago_id>/imagen/eliminar/', views.eliminar_imagen_pago, name='eliminar_imagen_pago'),
 
 
 

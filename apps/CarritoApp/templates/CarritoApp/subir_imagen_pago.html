@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block contenido %}
+<div class="container mt-5">
+  <div class="card shadow p-4">
+    <h1 class="text-center text-primary">Subir Comprobante de Pago</h1>
+    <h4 class="text-center text-secondary">Pago de Factura N° {{ pago.numero_factura }}</h4>
+
+    <form method="POST" enctype="multipart/form-data"
+          action="{% url 'CarritoApp:subir_imagen_pago' pago.id %}{% if next %}?next={{ next|urlencode }}{% endif %}">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <input type="hidden" name="next" value="{{ next }}">
+      <button type="submit" class="btn btn-success w-100">
+        <i class="bi bi-upload"></i> Guardar Comprobante
+      </button>
+    </form>
+
+    <div class="text-center mt-3">
+      <a href="{{ next }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Volver
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
