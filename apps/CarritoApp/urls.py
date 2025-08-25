@@ -110,7 +110,6 @@ urlpatterns = [
     path('compra/agregar/', views.agregar_compra, name='agregar_compra'),
     
 
-
     # MENSAJES... tus rutas previas
     path("mensajes/enviar/", vm.crear_mensaje, name="crear_mensaje"),
     path("admin/mensajes/", vm.lista_mensajes, name="mensajes_admin"),
@@ -118,6 +117,9 @@ urlpatterns = [
     path("admin/mensajes/<int:pk>/eliminar/", vm.eliminar_mensaje, name="eliminar_mensaje"),
 
     path("mis-mensajes/", vm.mis_mensajes, name="mis_mensajes"),
+
+    path('lista-vendedor/', lambda r: redirect(reverse('CarritoApp:listar_facturas')), name='lista_vendedor'),
+    path('listar_facturas/', views.lista_cierre_de_caja, name='listar_facturas'),
 
 
 

@@ -2,79 +2,135 @@
 {% load static %}
 
 {% block navegacion %}
-    {% include 'navegacion.html' %}
+  {% include 'navegacion.html' %}
 {% endblock %}
 
 {% block contenido %}
+{% url 'CarritoApp:listar_facturas' as fallback_lista %}
 <div class="container mt-5">
-    <div class="card shadow p-4">
-        <h1 class="text-center text-primary">Subir Imagen de Factura</h1>
-        <h4 class="text-center text-secondary">Factura N° {{ factura.numero_factura }}</h4>
-        
-        <form method="POST" enctype="multipart/form-data" class="mt-4">
-            {% csrf_token %}
-            <div class="mb-3">
-                {{ form.as_p }}
-            </div>
-            <button type="submit" class="btn btn-success w-100">
-                <i class="bi bi-upload"></i> Guardar Imagen
-            </button>
-        </form>
+  <div class="card shadow p-4">
+    <h1 class="text-center text-primary">Subir Imagen de Factura</h1>
+    <h4 class="text-center text-secondary">Factura N° {{ factura.numero_factura }}</h4>
 
-        <hr>
+    {# ---------- SUBIR ARCHIVO (PC) ---------- #}
+    <form
+      method="POST"
+      enctype="multipart/form-data"
+      class="mt-4"
+      action="{% url 'CarritoApp:subir_imagen_factura' factura.id %}{% if next %}?next={{ next|urlencode }}{% endif %}"
+    >
+      {% csrf_token %}
+      <div class="mb-3">
+        {{ form.as_p }}
+      </div>
 
-        <h3 class="text-center text-secondary">O capturar imagen desde cámara</h3>
-        <div class="text-center">
-            <video id="video" class="border rounded shadow-sm" autoplay playsinline width="100%"></video>
-            <canvas id="canvas" style="display: none;"></canvas>
-        </div>
-        
-        <div class="d-flex justify-content-center mt-3">
-            <button id="capture" class="btn btn-primary">
-                <i class="bi bi-camera"></i> Capturar Foto
-            </button>
-        </div>
+      <input type="hidden" name="next" value="{{ next|default:fallback_lista }}">
+      <button type="submit" class="btn btn-success w-100">
+        <i class="bi bi-upload"></i> Guardar Imagen
+      </button>
+    </form>
 
-        <form method="POST" class="mt-3 text-center">
-            {% csrf_token %}
-            <input type="hidden" name="captured_image" id="captured_image">
-            <button type="submit" id="save_image" class="btn btn-success d-none">
-                <i class="bi bi-save"></i> Guardar Foto Capturada
-            </button>
-        </form>
+    <hr>
 
-        <div class="text-center mt-4">
-            <a href="{% url 'CarritoApp:lista_facturas' %}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Volver
-            </a>
-        </div>
+    {# ---------- CÁMARA ---------- #}
+    <h3 class="text-center text-secondary">O capturar imagen desde cámara</h3>
+
+    <div class="camara-wrap mt-2">
+      <video id="video" class="border rounded shadow-sm w-100" autoplay playsinline></video>
+      <canvas id="canvas" class="d-none"></canvas>
     </div>
+
+    <div class="d-flex justify-content-center gap-2 mt-3">
+      <button id="capture" class="btn btn-primary" type="button">
+        <i class="bi bi-camera"></i> Capturar Foto
+      </button>
+      <button id="save_image" class="btn btn-success d-none" type="button">
+        <i class="bi bi-save"></i> Guardar Foto Capturada
+      </button>
+    </div>
+
+    {# Este form se envía programáticamente cuando se presiona "Guardar Foto Capturada" #}
+    <form
+      id="form_camara"
+      method="POST"
+      class="mt-3"
+      action="{% url 'CarritoApp:subir_imagen_factura' factura.id %}{% if next %}?next={{ next|urlencode }}{% endif %}"
+    >
+      {% csrf_token %}
+      <input type="hidden" name="captured_image" id="captured_image">
+      <input type="hidden" name="next" value="{{ next|default:fallback_lista }}">
+    </form>
+
+    {# ---------- VOLVER ---------- #}
+    <div class="text-center mt-4">
+      <a href="{{ next|default:fallback_lista }}" class="btn btn-outline-secondary">
+
+
+        <i class="bi bi-arrow-left"></i> Volver
+      </a>
+    </div>
+
+    {# ---------- MENSAJES ---------- #}
+    {% if messages %}
+      <hr>
+      {% for m in messages %}
+        <div class="alert alert-{{ m.tags }} mt-2">{{ m }}</div>
+      {% endfor %}
+    {% endif %}
+  </div>
 </div>
 
+<style>
+  .camara-wrap { max-width: 520px; margin: 0 auto; }
+  /* Mantener 4:3 sin forzar altura fija */
+  #video { aspect-ratio: 4 / 3; background: #000; border-radius: .5rem; }
+</style>
+
 <script>
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const captureButton = document.getElementById('capture');
-    const saveButton = document.getElementById('save_image');
-    const capturedImageInput = document.getElementById('captured_image');
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  const captureBtn = document.getElementById('capture');
+  const saveBtn = document.getElementById('save_image');
+  const capturedInput = document.getElementById('captured_image');
+  const formCamara = document.getElementById('form_camara');
 
+  // Iniciar cámara (silenciosamente si no hay soporte)
+  if (navigator.mediaDevices?.getUserMedia) {
     navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => video.srcObject = stream)
-        .catch(err => console.error('Error al acceder a la cámara:', err));
+      .then(stream => { video.srcObject = stream; })
+      .catch(err => console.warn('No se pudo acceder a la cámara:', err));
+  } else {
+    console.warn('getUserMedia no soportado en este navegador.');
+  }
 
-    captureButton.addEventListener('click', (e) => {
-        e.preventDefault();
-        const context = canvas.getContext('2d');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imageData = canvas.toDataURL('image/jpeg');
-        capturedImageInput.value = imageData;
-        saveButton.classList.remove('d-none');
-    });
+  // Capturar frame del video a JPG comprimido
+  captureBtn.addEventListener('click', () => {
+    const MAX_W = 1000, MAX_H = 750;
+    const vw = video.videoWidth || 1000;
+    const vh = video.videoHeight || 750;
+    const r = vw / vh;
+
+    let w = Math.min(vw, MAX_W);
+    let h = Math.round(w / r);
+    if (h > MAX_H) { h = MAX_H; w = Math.round(h * r); }
+
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, w, h);
+
+    // 0.85 = calidad; bajar si querés más compresión
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+    capturedInput.value = dataUrl;
+
+    // Mostrar botón de guardar (envío)
+    saveBtn.classList.remove('d-none');
+  });
+
+  // Enviar el form con la imagen capturada
+  saveBtn.addEventListener('click', () => {
+    if (!capturedInput.value) return;
+    formCamara.submit();
+  });
 </script>
 {% endblock %}
-<!-- Bootstrap CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-<!-- Bootstrap Icons -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">

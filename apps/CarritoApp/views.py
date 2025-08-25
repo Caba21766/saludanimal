@@ -1180,67 +1180,125 @@ def facturas_usuario(request):
 
 
 #-------------------subir una imagen factura---------------------------------------------#
-
-from django.shortcuts import get_object_or_404, redirect, render
+from django import forms
+from django.contrib import messages
 from django.core.files.base import ContentFile
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 import base64
 from .models import Factura
-from django import forms
+from django.urls import reverse          # << necesario para fallback
+from django.contrib import messages       # << necesario para messages
+from django.core.files.base import ContentFile
 
-# Formulario para cargar la imagen
+
+
+# ---------- Formulario ----------
 class SubirImagenFacturaForm(forms.ModelForm):
     class Meta:
         model = Factura
         fields = ['imagen_factura']
 
+
+# ---------- Vista ----------
+from django.urls import reverse          # << necesario para fallback
+from django.contrib import messages       # << necesario para messages
+from django.core.files.base import ContentFile
+
 def subir_imagen_factura(request, factura_id):
     factura = get_object_or_404(Factura, id=factura_id)
+
+    # A dónde volver: ?next=... o listado por defecto
+    fallback = reverse('CarritoApp:listar_facturas')
+    next_url = request.GET.get('next') or request.POST.get('next') or fallback
+
     if request.method == 'POST':
-        # Procesar imagen capturada desde la cámara
+        # 1) Imagen capturada (base64 desde cámara)
         captured_image_data = request.POST.get('captured_image')
         if captured_image_data:
-            # Decodificar imagen en base64
-            format, imgstr = captured_image_data.split(';base64,')
-            ext = format.split('/')[1]
-            image_data = ContentFile(base64.b64decode(imgstr), name=f"factura_{factura.numero_factura}.{ext}")
-            
-            # Eliminar imagen anterior si existe
-            if factura.imagen_factura:
-                factura.imagen_factura.delete(save=False)
-            
-            factura.imagen_factura = image_data
-            factura.save()
-            return redirect('CarritoApp:lista_facturas')  # Redirigir después de guardar
+            try:
+                # Espera algo como: data:image/png;base64,AAAA...
+                format_part, img_b64 = captured_image_data.split(';base64,', 1)
+                ext = (format_part.split('/')[-1] or 'png').lower()
 
-        # Procesar imagen subida desde archivo
-        form = SubirImagenFacturaForm(request.POST, request.FILES, instance=factura)
-        if form.is_valid():
-            # Eliminar imagen anterior si existe
+                image_data = ContentFile(
+                    base64.b64decode(img_b64),
+                    name=f"factura_{factura.numero_factura}.{ext}"
+                )
+
+                # Borrar anterior si existía
+                if factura.imagen_factura:
+                    factura.imagen_factura.delete(save=False)
+
+                factura.imagen_factura = image_data
+                factura.save(update_fields=['imagen_factura'])
+                messages.success(request, 'Imagen de factura subida correctamente.')
+            except Exception as e:
+                messages.error(request, f'No se pudo procesar la imagen capturada: {e}')
+            return redirect(next_url)
+
+        # 2) Imagen subida como archivo (PC) - directo desde request.FILES
+        uploaded = request.FILES.get('imagen_factura')
+        if uploaded:
+            # si había una imagen previa, borrarla
             if factura.imagen_factura:
                 factura.imagen_factura.delete(save=False)
-            form.save()
-            return redirect('CarritoApp:lista_facturas')  # Redirigir después de guardar
-    else:
-        form = SubirImagenFacturaForm(instance=factura)
-    
-    return render(request, 'subir_imagen_factura.html', {'form': form, 'factura': factura})
+
+            # asignar y guardar
+            factura.imagen_factura = uploaded
+            factura.save(update_fields=['imagen_factura'])
+            messages.success(request, 'Imagen de factura actualizada correctamente.')
+            return redirect(next_url)
+        else:
+            messages.warning(request, 'No seleccionaste ningún archivo.')
+            return render(
+                request,
+                'subir_imagen_factura.html',
+                {'form': SubirImagenFacturaForm(instance=factura), 'factura': factura, 'next': next_url},
+            )
+
+    # GET: mostrar formulario
+    form = SubirImagenFacturaForm(instance=factura)
+    return render(
+        request,
+        'subir_imagen_factura.html',
+        {'form': form, 'factura': factura, 'next': next_url},
+    )
+
+
+
+
 
 
 #----------------------------Eliminar Imagen Factura------------------------------------#
-from django.shortcuts import redirect, get_object_or_404
+
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 from django.contrib import messages
+
 from .models import Factura
 
 def eliminar_imagen_factura(request, factura_id):
     factura = get_object_or_404(Factura, id=factura_id)
+
+    # a dónde volver: ?next=... o al listado por defecto
+    fallback = reverse('CarritoApp:lista_vendedor')
+    next_url = request.GET.get('next') or fallback
+
     if factura.imagen_factura:
-        factura.imagen_factura.delete()  # Elimina el archivo físico
-        factura.imagen_factura = None  # Limpia el campo en la base de datos
-        factura.save()
-        messages.success(request, f"La imagen de la factura {factura.numero_factura} ha sido eliminada.")
+        # borra el archivo y limpia el campo
+        factura.imagen_factura.delete(save=False)
+        factura.imagen_factura = None
+        factura.save(update_fields=['imagen_factura'])
+        messages.success(request, 'Imagen de factura eliminada.')
     else:
-        messages.error(request, f"La factura {factura.numero_factura} no tiene una imagen asociada.")
-    return redirect('CarritoApp:lista_facturas')  # Redirige a la lista de facturas
+        messages.info(request, 'La factura no tenía imagen cargada.')
+
+    return redirect(next_url)
+
+
+
+
 
 
 #---------------------------------levantar_imagen_usuario------------------------------------#

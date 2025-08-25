@@ -133,3 +133,5 @@ class MensajeClienteForm(forms.ModelForm):
             "pedido": forms.TextInput(attrs={"class": "form-control", "maxlength": "255", "required": True}),
             "email_contacto": forms.EmailInput(attrs={"class": "form-control", "placeholder": "Opcional"}),
         }
+
+
