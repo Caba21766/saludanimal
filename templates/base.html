@@ -221,7 +221,11 @@
                                 <img src="{% static 'img/mundo.png' %}" alt="Imagen de perfil por defecto" width="40" height="40"
                                     class="rounded-circle me-2">
                                 {% endif %}
-                                <span>{{ user.username }}</span>
+                                
+                                <span>
+                                {{ request.user.first_name|default:request.user.last_name|default:request.user.email|default:request.user.username }}
+                                </span>
+                                
                             </div>
                         </a>
 

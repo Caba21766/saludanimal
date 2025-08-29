@@ -6,11 +6,26 @@
 {% endblock %}
 
 {% block contenido %}
+<style>
+    /* Aplica a toda la tabla */
+    .tabla-usuarios td, 
+    .tabla-usuarios th {
+        font-size: 12px;  /* ajustá a 11px o 10px si todavía no entra */
+        white-space: nowrap; /* evita que corte en dos líneas */
+    }
+
+    /* Opcional: achicar el padding para que ocupe menos espacio */
+    .tabla-usuarios td, 
+    .tabla-usuarios th {
+        padding: 4px 6px;
+    }
+</style>
+
 <div class="container mt-4">
     <h2 class="text-center mb-4">Lista de Usuarios</h2>
 
     <div class="table-responsive">
-        <table class="table table-striped table-bordered text-center">
+        <table class="table table-striped table-bordered text-center tabla-usuarios">
             <thead class="table-dark">
                 <tr>
                     <th>ID</th>
