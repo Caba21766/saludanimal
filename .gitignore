@@ -32,3 +32,34 @@ staticfiles/
 # apps/**/migrations/*.py
 # !apps/**/migrations/__init__.py
 
+# --- SO / utilidades ---
+.DS_Store
+Thumbs.db
+*.swp
+*.bak
+*.tmp
+
+# --- Entorno / Python ---
+.venv/
+.python-version           # si usás pyenv
+
+# --- Tooling Python ---
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.coverage
+coverage.xml
+htmlcov/
+
+# --- Node / Frontend (si usás npm/yarn) ---
+node_modules/
+dist/
+*.map
+
+# --- Django i18n ---
+*.mo                      # binarios de traducción (los .po sí se versionan)
+
+# --- Claves/Certs accidentales ---
+*.pem
+*.key

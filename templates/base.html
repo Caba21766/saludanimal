@@ -7,7 +7,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block titulo %}Caballero Gustavo{% endblock %}</title>
+    <title>{% block titulo %}Simek Osiris German{% endblock %}</title>
 
     <link rel="stylesheet" href="{% static 'css/stile.css' %}">
 
@@ -16,7 +16,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
-
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -58,7 +57,6 @@
     100% { transform: scale(1); }
 }
 
-
 #btn-mensaje-flotante{
   position: fixed;
   width: 56px; height: 56px;
@@ -80,6 +78,21 @@
 }
 </style>
 
+<style>
+  /* Forzar que el toggler NO ocupe toda la fila */
+  .navbar .navbar-toggler{
+    width: auto !important;
+    display: inline-flex !important;
+    margin-left: auto;            /* empuja a la derecha */
+  }
+  /* Asegurar que el contenedor de la navbar sea flex (por si algo lo pisa) */
+  .navbar .container-fluid{
+    display: flex !important;
+    align-items: center !important;
+    gap: .5rem;
+  }
+</style>
+
 <body>
     <button id="btn-mensaje-flotante"
             class="btn rounded-circle shadow mensaje-float-up"
@@ -95,14 +108,15 @@
         <div class="container">
             <!-- Logo -->
             <a class="navbar-brand d-flex align-items-center gap-2" href="{% url 'index' %}" style="color: white;">
-                <img src="{% static 'img/mundo1.jpg' %}" alt="Logo"
+                <img src="{% static 'img/reydelpollo2.png' %}" alt="Logo"
                      style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
-                <span class="fuente-animal" style="font-size: 1.2rem; font-weight: bold;">Mundo Animal</span>
+                <span class="fuente-animal" style="font-size: 1.2rem; font-weight: bold;">Rey del Pollo</span>
             </a>
-            <!-- Botón para el menú en pantallas pequeñas -->
+
+            <!-- Botón hamburguesa (se debe poner aquí) -->
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
             </button>
             
             <!-- Contenido del menú -->
@@ -113,13 +127,15 @@
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="colaboradorDropdown" role="button"
                             data-bs-toggle="dropdown" aria-expanded="false" style="font-family: 'Verdana', sans-serif; color: #e29494;">
-                            Mis Mascotas
+                            Mis Compras
                             </a>
 
                             <ul class="dropdown-menu" aria-labelledby="colaboradorDropdown">
                                 <li><a class="dropdown-item" href="{% url 'CarritoApp:mis_facturas' %}">Mis Compras</a></li>
                                 <li><a class="dropdown-item" href="{% url 'libros:listar_ctacorriente' %}">Cuenta Corriente</a></li>
+                                {% if user.is_staff %}
                                 <li><a class="dropdown-item" href="{% url 'mascota:lista_mascotas' %}">Mi Familia</a></li>
+                                {% endif %}
                                 <li>
                                 <a class="dropdown-item" href="{% url 'CarritoApp:mis_mensajes' %}">Mensajes</a>
                                 </li>
@@ -130,7 +146,7 @@
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'nosotros' %}" style="font-weight: bold; color: #75bb93;">Veterinaria</a>
+                        <a class="nav-link" href="{% url 'nosotros' %}" style="font-weight: bold; color: #75bb93;">Rey del Pollo</a>
                     </li>
 
                     
