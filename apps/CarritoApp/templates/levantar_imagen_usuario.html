@@ -14,12 +14,18 @@
                 <h4 class="text-center text-muted">Factura #{{ factura.numero_factura }}</h4>
 
                 <!-- Formulario para subir imagen desde archivo -->
+                <!-- Formulario para subir imagen desde archivo -->
                 <form method="POST" enctype="multipart/form-data" class="mt-4">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        {{ form.as_p }}
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">Guardar Imagen</button>
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="id_imagen_factura" class="form-label">Imagen factura:</label>
+                    <input type="file"
+                        name="imagen_factura"
+                        id="id_imagen_factura"
+                        accept="image/*"
+                        class="form-control">
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Guardar Imagen</button>
                 </form>
 
                 <!-- Sección para capturar imagen desde cámara -->

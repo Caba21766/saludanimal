@@ -893,6 +893,32 @@ def lista_cierre_de_caja(request):
 
 
 
+#--------------------- apps/CarritoApp/views.py
+from django.shortcuts import redirect, get_object_or_404
+from django.views.decorators.http import require_POST
+from django.contrib import messages
+from apps.CarritoApp.models import Factura
+
+@require_POST
+def actualizar_estado_entrega(request, factura_id):
+    estado = request.POST.get("estado")
+    next_url = request.POST.get("next") or request.META.get("HTTP_REFERER") or "/"
+
+    # Validar valores esperados
+    validos = {"pendiente", "aceptado", "rechazado"}
+    if estado not in validos:
+        messages.error(request, "Estado inválido.")
+        return redirect(next_url)
+
+    factura = get_object_or_404(Factura, pk=factura_id)
+    factura.estado_entrega = estado
+    factura.save(update_fields=["estado_entrega"])
+
+    messages.success(request, "Estado de entrega actualizado.")
+    return redirect(next_url)
+
+
+
 
 
 
@@ -1339,40 +1365,64 @@ def eliminar_imagen_factura(request, factura_id):
 
 #---------------------------------levantar_imagen_usuario------------------------------------#
 
+# CarritoApp/views.py
+import base64
+from django.contrib import messages
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404, render, redirect
+
 from .models import Factura
-from .forms import FacturaImagenForm
-import base64
 
 def levantar_imagen_usuario(request, pk):
     factura = get_object_or_404(Factura, pk=pk)
+
     if request.method == 'POST':
-        if 'captured_image' in request.POST:  # Si viene desde la cámara
-            captured_image_data = request.POST['captured_image']
-            if captured_image_data:
-                # Procesar datos base64
-                format, imgstr = captured_image_data.split(';base64,')
-                ext = format.split('/')[-1]
-                image_file = ContentFile(base64.b64decode(imgstr), name=f"factura_{factura.numero_factura}.{ext}")
-                
-                # Eliminar imagen anterior si existe
+        # --- 1) Cámara (base64) ---
+        captured = request.POST.get('captured_image')
+        if captured:
+            try:
+                if ';base64,' not in captured:
+                    raise ValueError('Formato base64 inválido.')
+                fmt, b64 = captured.split(';base64,', 1)
+                ext = (fmt.split('/')[-1] or 'jpg').lower()
+                if ext == 'jpeg':
+                    ext = 'jpg'
+
+                image_file = ContentFile(
+                    base64.b64decode(b64),
+                    name=f"factura_{factura.numero_factura}.{ext}"
+                )
                 if factura.imagen_factura:
                     factura.imagen_factura.delete(save=False)
-                
-                # Asignar nueva imagen y guardar
                 factura.imagen_factura = image_file
-                factura.save()
+                factura.save(update_fields=['imagen_factura'])
+                messages.success(request, 'Imagen guardada desde cámara.')
                 return redirect('CarritoApp:facturas_usuario')
+            except Exception as e:
+                messages.error(request, f'No se pudo procesar la imagen capturada: {e}')
+                # cae a render con error visible
 
-        else:  # Si viene desde el formulario de carga
-            form = FacturaImagenForm(request.POST, request.FILES, instance=factura)
-            if form.is_valid():
-                form.save()
-                return redirect('CarritoApp:facturas_usuario')
-    else:
-        form = FacturaImagenForm(instance=factura)
-    return render(request, 'levantar_imagen_usuario.html', {'form': form, 'factura': factura})
+        # --- 2) Archivo (input file) ---
+        if 'imagen_factura' not in request.FILES:
+            messages.warning(request, 'No llegó ningún archivo. Verificá que el formulario tenga enctype="multipart/form-data" y seleccionaste un archivo.')
+            return render(request, 'levantar_imagen_usuario.html', {'factura': factura})
+
+        uploaded = request.FILES['imagen_factura']
+        if not uploaded or not getattr(uploaded, 'name', ''):
+            messages.warning(request, 'No seleccionaste un archivo válido.')
+            return render(request, 'levantar_imagen_usuario.html', {'factura': factura})
+
+        # Reemplaza si había una previa
+        if factura.imagen_factura:
+            factura.imagen_factura.delete(save=False)
+
+        factura.imagen_factura = uploaded
+        factura.save(update_fields=['imagen_factura'])
+        messages.success(request, 'Imagen guardada desde archivo.')
+        return redirect('CarritoApp:facturas_usuario')
+
+    # GET
+    return render(request, 'levantar_imagen_usuario.html', {'factura': factura})
 
 
 

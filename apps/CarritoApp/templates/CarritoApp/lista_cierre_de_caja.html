@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 {% load static %}
-
 {% block navegacion %}
 {% include 'navegacion.html' %}
 {% endblock %}
@@ -31,14 +30,12 @@
         padding: 2px 4px;
     }
 </style>
-
 <style>
     #dni_cliente,
     #fecha_desde {
         height: 31.6px; /* ajusta según el alto real del input date */
     }
 </style>
-
 <style>
   .sep-fecha td {
     border-top: 2px solid #0d6efd; /* línea divisoria */
@@ -46,7 +43,6 @@
     font-weight: 600;
   }
 </style>
-
 
 <div class="card shadow-sm mb-4" style="background-color:#727f8b;">
   <div class="card-header bg-white border-0">
@@ -140,9 +136,6 @@
           <th>Acciones</th>
         </tr>
       </thead>
-
-
-      
       <tbody>
       {% for m in movimientos %}
         {% ifchanged m.fecha|date:"Y-m-d" %}
@@ -193,13 +186,17 @@
                 <p class="text-muted">Sin imagen</p>
               {% endif %}
             </td>
-            <td>
 
-            <select name="estado" class="form-select form-select-sm d-inline w-auto" onchange="this.form.submit()">
-              <option value="pendiente" {% if m.estado_entrega == 'pendiente' %}selected{% endif %}>⏳</option>
-              <option value="aceptado"  {% if m.estado_entrega == 'aceptado'  %}selected{% endif %}>✅ Entregado</option>
-              <option value="rechazado" {% if m.estado_entrega == 'rechazado' %}selected{% endif %}>❌</option>
-            </select>
+            <td>
+              <form method="post" action="{% url 'CarritoApp:actualizar_estado_entrega' m.id %}" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <select name="estado" class="form-select form-select-sm d-inline w-auto" onchange="this.form.submit()">
+                  <option value="pendiente" {% if m.estado_entrega == 'pendiente' %}selected{% endif %}>⏳</option>
+                  <option value="aceptado"  {% if m.estado_entrega == 'aceptado'  %}selected{% endif %}>✅ Entregado</option>
+                  <option value="rechazado" {% if m.estado_entrega == 'rechazado' %}selected{% endif %}>❌</option>
+                </select>
+              </form>
             </td>
 
             <td>
@@ -208,7 +205,6 @@
                 <a href="{% url 'CarritoApp:vista_resumen_factura' m.id %}" class="btn btn-secondary btn-sm" title="Resumen">
                   <i class="bi bi-receipt"></i>
                 </a>
-
                 <a href="{% url 'CarritoApp:subir_imagen_factura' m.id %}" class="btn btn-success btn-sm" title="Subir imagen">
                   <i class="bi bi-upload"></i>
                 </a>
@@ -279,16 +275,6 @@
                 </button>
               {% endif %}
             </td>
-
-
-
-
-
-
-
-
-
-
           </tr>
         {% endif %}
       {% endfor %}
@@ -300,7 +286,6 @@
   <p class="text-center text-muted">No hay movimientos con los filtros seleccionados.</p>
 {% endif %}
 <hr>
-
 <!-- ================== Resumen por método de pago ================== -->
 <div class="card shadow-sm mt-4">
   <div class="card-header bg-dark text-white">
@@ -336,20 +321,13 @@
   </div>
 </div>
 
-
-
-
-
-
 <script>
   document.addEventListener('click', function (e) {
     const btn = e.target.closest('.view-factura');
     if (!btn) return;
-
     const src = btn.getAttribute('data-src') || '';
     const img = document.getElementById('facturaModalImg');
     img.src = src;
-
     const modalEl = document.getElementById('facturaModal');
     const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
     bsModal.show();
@@ -359,8 +337,6 @@
     document.getElementById('facturaModalImg').src = '';
   });
 </script>
-
-
 
 <div class="modal fade" id="facturaModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -379,14 +355,8 @@
   </div>
 </div>
 
-
-
-
 {% endblock %}
-
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-
 {% block footer %}
 {% include 'footer.html' %}
 {% endblock %}

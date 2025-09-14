@@ -124,9 +124,10 @@ urlpatterns = [
     path('pago/<int:pago_id>/imagen/subir/', views.subir_imagen_pago, name='subir_imagen_pago'),
     path('pago/<int:pago_id>/imagen/eliminar/', views.eliminar_imagen_pago, name='eliminar_imagen_pago'),
 
-    #path(
-    #    "facturas/<int:factura_id>/estado/", views.actualizar_estado_entrega, name="actualizar_estado_entrega",
-    #),
+   
+    path(
+        "facturas/<int:factura_id>/estado/", views.actualizar_estado_entrega, name="actualizar_estado_entrega",
+    ),
 
 
 ]
