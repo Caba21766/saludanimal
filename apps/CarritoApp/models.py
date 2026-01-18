@@ -303,3 +303,30 @@ class MensajeCliente(models.Model):
 
     def __str__(self):
         return f"{self.id} - {self.apellido}, {self.nombre}"
+
+#----------------Mensajes al Administrador-----------------------------#
+
+#----------------- Estado del chat WhatsApp (n8n) ---------------------#
+class ChatEstado(models.Model):
+    cliente_id = models.CharField(max_length=50, null=True, blank=True)
+    nombre_cliente = models.CharField(max_length=150, null=True, blank=True)
+    cleaned_sender_pn = models.CharField(max_length=50, null=True, blank=True)
+
+    esperando_opcion = models.BooleanField(default=False)
+    paso = models.CharField(max_length=50, null=True, blank=True)
+    ultimo_texto = models.TextField(null=True, blank=True)
+
+    precio_total = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True
+    )
+
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "CarritoApp_chat_estado"   # 🔴 CLAVE
+        verbose_name = "Estado del Chat"
+        verbose_name_plural = "Estados del Chat"
+
+    def __str__(self):
+        return f"{self.nombre_cliente or self.cleaned_sender_pn} - {self.paso}"

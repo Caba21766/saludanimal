@@ -1,110 +1,137 @@
-
 {% extends 'base.html' %}
 {% load static %}
-{% block navegacion %}
-{% include 'navegacion.html' %}
-{% endblock %}
 
+{% block navegacion %}
+  {% include 'navegacion.html' %}
+{% endblock %}
 
 {% block contenido %}
 
 <style>
-    #nombre_producto,
-    #fecha_hasta {
-        height: 31.6px; /* ajusta según el alto real del input date */
-    }
-    #fecha_desde {
-        height: 31.6px; /* ajusta según el alto real del input date */
-    }
-</style>
+  #nombre_producto,
+  #fecha_hasta,
+  #fecha_desde {
+    height: 31.6px;
+  }
 
-<style>
   .sep-fecha td{
-    border-top: 2px solid #0d6efd; /* línea */
-    background: #f8f9fa;           /* leve contraste */
+    border-top: 2px solid #0d6efd;
+    background: #f8f9fa;
     font-weight: 600;
   }
 </style>
 
-
 <div class="container my-5">
-    <h1 class="text-center mb-4">Productos Vendidos</h1>
+  <h1 class="text-center mb-4">Productos Vendidos</h1>
 
-    <!-- Formulario de filtros -->
-    <form method="get" class="mb-4">
-        <div class="row g-3">
+  <form method="get" class="mb-4">
+    <div class="row g-3">
 
-            <div class="col-md-3">
-                <label for="nombre_producto" class="form-label">Nombre del Producto</label>
-                <input type="text" name="nombre_producto" id="nombre_producto" class="form-control"
-                       placeholder="Nombre del producto" value="{{ filtro_nombre_producto }}">
-            </div>
+      <div class="col-md-3">
+        <label for="nombre_producto" class="form-label">Nombre del Producto</label>
+        <input type="text" name="nombre_producto" id="nombre_producto" class="form-control"
+               placeholder="Nombre del producto" value="{{ filtro_nombre_producto }}">
+      </div>
 
-            <div class="col-12 col-md-3">
-                <label for="fecha_desde" class="form-label">Fecha Anterior</label>
-                <input type="date" name="fecha_desde" id="fecha_desde" class="form-control"
-                       value="{{ fecha_desde }}">
-            </div>
+      <div class="col-12 col-md-3">
+        <label for="fecha_desde" class="form-label">Fecha Anterior</label>
+        <input type="date" name="fecha_desde" id="fecha_desde" class="form-control"
+               value="{{ fecha_desde }}">
+      </div>
 
-            <div class="col-12 col-md-3">
-                <label for="fecha_hasta" class="form-label">Fecha Actual</label>
-                <input type="date" name="fecha_hasta" id="fecha_hasta" class="form-control"
-                       value="{{ fecha_hasta }}">
-            </div>
+      <div class="col-12 col-md-3">
+        <label for="fecha_hasta" class="form-label">Fecha Actual</label>
+        <input type="date" name="fecha_hasta" id="fecha_hasta" class="form-control"
+               value="{{ fecha_hasta }}">
+      </div>
 
-            <div class="col-12 col-md-3 d-flex align-items-end gap-2">
-                <button type="submit" class="btn btn-primary w-50">
-                    <i class="bi bi-funnel"></i> Filtrar
-                </button>
-                <a href="{% url 'CarritoApp:productos_vendidos' %}" class="btn btn-secondary w-50">
-                    <i class="bi bi-x-circle"></i> Restablecer
-                </a>
-            </div>
+      <div class="col-12 col-md-3 d-flex align-items-end gap-2">
+        <button type="submit" class="btn btn-primary w-50">
+          <i class="bi bi-funnel"></i> Filtrar
+        </button>
+        <a href="{% url 'CarritoApp:productos_vendidos' %}" class="btn btn-secondary w-50">
+          <i class="bi bi-x-circle"></i> Restablecer
+        </a>
+      </div>
 
-        </div>
-    </form>
-</div>
+    </div>
+  </form>
 
-    {% if productos_vendidos %}
-        <div class="table-responsive">
-            <table class="table table-bordered table-striped">
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Nombre del Producto</th>
-                        <th>Cantidad Vendida</th>
-                        <th>Precio Unitario</th>
-                        <th>Total</th>
-                    </tr>
-                </thead>
+  {% if productos_vendidos %}
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Nombre del Producto</th>
+            <th>Cantidad Vendida</th>
+            <th>Precio Unitario</th>
+            <th>Total</th>
+          </tr>
+        </thead>
 
-                <tbody>
-                {% for producto in productos_vendidos %}
-                    {% ifchanged producto.fecha|date:"Y-m-d" %}
-                    <tr class="sep-fecha">
-                        <td colspan="5">
-                        {{ producto.fecha|date:"d/m/Y" }}
-                        </td>
-                    </tr>
-                    {% endifchanged %}
-                    <tr>
-                        <td>{{ producto.fecha|date:"d/m/Y" }}</td>
-                        <td>{{ producto.nombre_producto }}</td>
-                        <td>{{ producto.cantidad_vendida }}</td>
-                        <td>${{ producto.precio_unitario|floatformat:2 }}</td>
-                        <td>${{ producto.total|floatformat:2 }}</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
+        <tbody>
+          {% for producto in productos_vendidos %}
+            {% ifchanged producto.fecha|date:"Y-m-d" %}
+              <tr class="sep-fecha">
+                <td colspan="5">{{ producto.fecha|date:"d/m/Y" }}</td>
+              </tr>
+            {% endifchanged %}
 
-            </table>
-        </div>
-    {% else %}
-        <p>No hay productos vendidos registrados.</p>
-    {% endif %}
-</div>
+            <tr>
+              <td>{{ producto.fecha|date:"d/m/Y" }}</td>
+              <td>{{ producto.nombre_producto }}</td>
+              <td>{{ producto.cantidad_vendida }}</td>
+              <td>${{ producto.precio_unitario|floatformat:2 }}</td>
+              <td>${{ producto.total|floatformat:2 }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+       
+
+      </table>
+    </div>
+  {% else %}
+    <p>No hay productos vendidos registrados.</p>
+  {% endif %}
+
+</div> {# ✅ este sí es el cierre correcto del container #}
+
+{% if inventario_resumen %}
+  <div class="container my-5">
+    <h3 class="text-center mb-4">SUMA de Producto Vendidos en el día</h3>
+
+    <div class="table-responsive">
+      <table class="table table-bordered table-hover align-middle">
+        <thead class="table-dark text-center">
+          <tr>
+            <th>Producto</th>
+            <th>Cantidad Total Vendida</th>
+            <th>Total Vendido</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in inventario_resumen %}
+            <tr>
+              <td>{{ item.nombre_producto }}</td>
+              <td class="text-center fw-bold">{{ item.cantidad_total }}</td>
+              <td class="text-end fw-bold">${{ item.total_vendido|floatformat:2 }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+        <tr class="table-dark">
+            <td colspan="2" class="text-end fw-bold">TOTAL GENERAL</td>
+            <td class="text-end fw-bold">${{ inventario_total_general|floatformat:2 }}</td>
+        </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+{% endif %}
 
 {% endblock %}
+
 {% block footer %}
-{% include 'footer.html' %}
+  {% include 'footer.html' %}
 {% endblock %}

@@ -12,6 +12,18 @@ from .forms import RegistrarseForm, EditarUsuarioForm, CustomLoginForm
 
 User = get_user_model()
 
+# ======== Helper: bloquear vistas si ya está autenticado ========
+class AnonymousRequiredMixin:
+    """Redirige si el usuario YA está autenticado (para register/login)."""
+    redirect_url = 'index'  # cambialo si querés
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return redirect(self.redirect_url)
+        return super().dispatch(request, *args, **kwargs)
+
+
+
 
 # -------------------- REGISTRO --------------------
 class RegistrarseView(FormView):
@@ -101,3 +113,37 @@ class TuVista(TemplateView):
         context = super().get_context_data(**kwargs)
         context['user'] = self.request.user
         return context
+
+
+# -------------------- editar usuario admin --------------------
+from django.http import Http404
+from django.shortcuts import get_object_or_404, render, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.contrib.auth import get_user_model
+
+from .forms import EditarUsuarioForm
+
+User = get_user_model()
+
+
+@login_required
+def edit_usuario_admin(request, pk):
+    # ✅ Solo staff/admin
+    if not request.user.is_staff:
+        raise Http404("No tienes permiso para acceder a esta página.")
+
+    usuario = get_object_or_404(User, pk=pk)
+
+    if request.method == "POST":
+        form = EditarUsuarioForm(request.POST, request.FILES, instance=usuario)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Usuario {usuario.username} actualizado correctamente.")
+            return redirect("apps.blog_auth:lista_usuarios")
+    else:
+        form = EditarUsuarioForm(instance=usuario)
+
+    # ✅ IMPORTANTE: si tu template está en templates/editar_usuario.html (sin carpeta users)
+    # cambiá a 'editar_usuario.html'
+    return render(request, "users/editar_usuario.html", {"form": form, "usuario": usuario})

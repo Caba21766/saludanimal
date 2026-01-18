@@ -1,0 +1,1406 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block navegacion %}
+{% include 'navegacion.html' %}
+{% endblock %}
+
+{% block contenido %}
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500&display=swap" rel="stylesheet">
+<!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<style>
+    /* General */
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f9f9f9;
+    }
+    
+    .factura-container {
+        max-width: 100%;
+        width: 800px;
+        margin: 20px auto;
+        border: 1px solid #000;
+        padding: 20px;
+        background-color: #fff;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Encabezado */
+    .factura-container > div {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap; /* Asegura que el contenido se ajuste en pantallas pequeñas */
+    }
+    
+    .factura-container h1 {
+        font-size: 24px;
+        margin-bottom: 10px;
+    }
+    
+    .factura-container img {
+        max-width: 100px;
+        height: auto;
+    }
+    
+    /* Formulario del cliente */
+    form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    form label {
+        font-size: 14px;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+    
+    form input,
+    form select {
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+        width: 100%;
+    }
+    
+    form button {
+        padding: 8px 12px;
+        font-size: 14px;
+        color: #fff;
+        background-color: #4caf50;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    form button:hover {
+        background-color: #45a049;
+    }
+    
+    /* Formulario de productos */
+    
+  
+    /* Tabla */
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    
+    .table th,
+    .table td {
+        padding: 10px;
+        border: 1px solid #ddd;
+        text-align: left;
+    }
+    
+    .table th {
+        background-color: #f4f4f4;
+        font-weight: bold;
+    }
+    
+    tfoot input {
+        width: 100%;
+        padding: 5px;
+        text-align: right;
+    }
+    
+    /* Botones */
+    .btn {
+        display: inline-block;
+        padding: 8px 12px;
+        font-size: 14px;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        text-align: center;
+        cursor: pointer;
+    }
+    
+    .btn-primary {
+        background-color: #007bff;
+    }
+    
+    .btn-primary:hover {
+        background-color: #0056b3;
+    }
+    
+    .btn-success {
+        background-color: #28a745;
+    }
+    
+    .btn-success:hover {
+        background-color: #218838;
+    }
+    
+    .btn-danger {
+        background-color: #dc3545;
+    }
+    
+    .btn-danger:hover {
+        background-color: #c82333;
+    }
+    
+    /* Responsividad */
+    
+    </style>
+    <style>
+        /* Ajustar tamaño de letra para tablas */
+        .table {
+            font-size: 14px; /* Tamaño predeterminado */
+            word-wrap: break-word; /* Permitir que las palabras largas se dividan */
+            table-layout: fixed; /* Forzar el ajuste del contenido en las columnas */
+        }
+        
+        .table th, .table td {
+            overflow: hidden; /* Ocultar contenido desbordado */
+            text-overflow: ellipsis; /* Mostrar "..." si el contenido es muy largo */
+            white-space: nowrap; /* Evitar que el texto se divida en varias líneas */
+        }
+        
+        tfoot input,
+        tfoot select {
+            font-size: 12px; /* Reducir tamaño de fuentes en inputs y selects */
+        }
+        
+        tfoot td, tfoot th {
+            font-size: 13px; /* Ajustar tamaño en el pie de tabla */
+        }
+        
+        /* Responsividad para pantallas pequeñas */
+        @media (max-width: 768px) {
+    /* Reducir aún más el tamaño de las fuentes en la tabla */
+    .table th, .table td {
+        font-size: 10px; /* Letra más pequeña */
+        padding: 6px; /* Reduce el espacio dentro de las celdas */
+    }
+
+    tfoot td, tfoot th {
+        font-size: 10px; /* Ajustar tamaño en el pie de tabla */
+    }
+
+    tfoot input,
+    tfoot select {
+        font-size: 10px; /* Hacer más pequeños los inputs y selects */
+    }
+}
+
+@media (max-width: 480px) {
+    /* Para pantallas aún más pequeñas */
+    .table {
+        font-size: 9px; /* Reducir la tabla completa */
+    }
+
+    .table th, .table td {
+        font-size: 9px; /* Ajustar texto dentro de la tabla */
+        padding: 4px; /* Reduce el espaciado interno */
+    }
+
+    tfoot td, tfoot th {
+        font-size: 9px; /* Hacer más pequeño el texto del pie de tabla */
+    }
+
+    tfoot input,
+    tfoot select {
+        font-size: 9px; /* Reducir inputs y selects */
+    }
+}
+
+@media (max-width: 768px) {
+    .table input {
+        font-size: 10px; /* Reducir tamaño del texto dentro de los inputs */
+        padding: 3px; /* Ajustar el espacio dentro del input */
+        text-align: center; /* Mantener alineado */
+    }
+}
+
+@media (max-width: 480px) {
+    .table input {
+        font-size: 9px; /* Hacerlo aún más pequeño en pantallas más chicas */
+        padding: 2px; /* Reducir el padding para compactar */
+    }
+}
+
+@media (max-width: 768px) {
+    .btn {
+        font-size: 12px; /* Reduce el tamaño del texto del botón */
+        padding: 6px 10px; /* Ajusta el tamaño del botón */
+    }
+    
+    .btn-danger {
+        font-size: 12px;
+        padding: 5px 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .btn {
+        font-size: 10px; /* Reduce aún más el texto del botón */
+        padding: 4px 8px; /* Ajusta el tamaño del botón */
+    }
+
+    .btn-danger {
+        font-size: 9px;
+        padding: 3px 6px; /* Botones de "Eliminar" más compactos */
+    }
+}
+
+@media (max-width: 768px) {
+    .btn-aceptar {
+        font-size: 10px; /* Reducir el tamaño del texto */
+        padding: 3px 6px; /* Ajustar espacio interno */
+        width: 100%; /* Para que se ajuste al contenedor */
+        max-width: 80px; /* Limitar el ancho del botón */
+    }
+}
+
+@media (max-width: 480px) {
+    .btn-aceptar {
+        font-size: 9px; /* Texto aún más pequeño */
+        padding: 2px 5px; /* Hacer el botón más compacto */
+        width: 100%; /* Ajuste total al contenedor */
+        max-width: 70px; /* Asegurar que no se desborde */
+    }
+}
+
+</style>
+        
+    
+<div class="factura-container">
+    <!-- Encabezado de la factura -->
+    <div style="display: flex; justify-content: space-between; margin-bottom: 20px;
+            background-image: url('/static/img/Logos/basketball.png');
+            background-repeat: repeat;
+            background-size: contain;
+            padding: 15px; border-radius: 8px;">
+        <div style="line-height: 1.1;"> <!-- Ajustar interlineado -->
+            <h5 style="margin-bottom: 10px; font-size: 48px; font-family: 'Poppins', sans-serif;">Factura</h5>
+            <p style="margin: 0;">Factura Nº: {{ numero_factura }}</p>
+        </div>
+        <div style="line-height: 2;">        
+            <p style="margin: 0;">Fecha: {{ fecha_actual }}</p>
+            <p style="margin: 0;">Hora: {{ hora }}</p>
+            <p style="margin: 0;">Vendedor: {{ vendedor }}</p>
+        </div>
+        <div>
+            <img src="{% static 'img/reydelpollo1.png' %}" alt="Logo" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; margin-top: 10px;">
+        </div>
+        
+    </div>
+    
+    <hr>
+   
+<!-- Buscar Clientes------------------------------------------------------- -->
+    <div style="margin-top: 5px; line-height: 1.2; position: relative;">
+        <form id="form_cliente" method="POST">
+            {% csrf_token %}
+
+            <input type="text" id="nombre_apellido_cliente" name="nombre_apellido_cliente"
+                placeholder="Cliente" autocomplete="off"
+                style="width: 200px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px;">
+            <input type="hidden" id="dni_cliente_hidden" name="dni_cliente" value="{{ dni_cliente }}">
+            <ul id="sugerencias_cliente" class="list-group"
+                style="position: absolute; z-index: 999; width: 200px; display: none; background-color: white; 
+                    border: 1px solid #ccc; border-radius: 5px; list-style: none; margin: 0; padding: 0;"></ul>
+        </form>
+    </div>
+    
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const input = document.getElementById('nombre_apellido_cliente');
+    const hiddenDni = document.getElementById('dni_cliente_hidden');
+    const sugerencias = document.getElementById('sugerencias_cliente');
+    const form = document.getElementById('form_cliente');
+
+    input.addEventListener('input', function () {
+        const texto = this.value.trim();
+        if (texto.length < 2) {
+            sugerencias.style.display = 'none';
+            return;
+        }
+
+        fetch(`/modulo1/api/buscar-clientes/?q=${encodeURIComponent(texto)}`)
+            .then(res => res.json())
+            .then(data => {
+                sugerencias.innerHTML = '';
+                if (data.length === 0) {
+                    sugerencias.style.display = 'none';
+                    return;
+                }
+
+                data.forEach(cliente => {
+                    const item = document.createElement('li');
+                    item.textContent = `${cliente.first_name} ${cliente.last_name} (${cliente.dni_usuario})`;
+                    item.style.padding = '6px';
+                    item.style.cursor = 'pointer';
+                    item.addEventListener('click', () => {
+                        input.value = `${cliente.first_name} ${cliente.last_name}`;
+                        hiddenDni.value = cliente.dni_usuario;
+                        sugerencias.style.display = 'none';
+                        form.submit();
+                    });
+                    sugerencias.appendChild(item);
+                });
+
+                sugerencias.style.display = 'block';
+            });
+    });
+
+    // Ocultar sugerencias al hacer clic afuera
+    document.addEventListener('click', (e) => {
+        if (!form.contains(e.target)) {
+            sugerencias.style.display = 'none';
+        }
+    });
+});
+</script>
+
+<!-- Fin Buscar Clientes------------------------------------------------------- -->
+
+
+
+
+<!-- Mostrar datos de Clientes------------------------------------------------------- -->
+    {% if messages %}
+    {% for message in messages %}
+        {% if "factura" in message.tags %}
+        <div class="alert alert-danger">
+            {{ message }}
+        </div>
+        {% endif %}
+    {% endfor %}
+    {% endif %}
+
+    <hr>
+    <div style="display: flex; gap: 20px; justify-content: flex-start;">
+        <!-- Primera columna -->
+        <div style="flex: 1; max-width: 200px;">
+            <p style="margin: 2px 0; font-size: 12px;"><strong>Nombre:</strong> {{ first_name }}</p>
+            <p style="margin: 2px 0; font-size: 12px;"><strong>Apellido:</strong> {{ last_name }}</p>
+        </div>
+        <!-- Segunda columna -->
+        <div style="flex: 1; max-width: 200px;">
+            <p style="margin: 2px 0; font-size: 12px;"><strong>Cel:</strong> {{ tel1_usuario }}</p>
+            <p style="margin: 2px 0; font-size: 12px;"><strong>Dom:</strong> <span id="domicilio_usuario">{{ domicilio_usuario }}</span></p>
+        </div>
+        <!-- Terncera columna -->
+        <div style="flex: 1; max-width: 200px;">
+            <p style="margin: 2px 0; font-size: 12px;"></pstyle><strong>CUIL:</strong> <span id="cuil_usuario">{{ cuil }}</span></p>
+            <p style="margin: 2px 0; font-size: 12px;"></p><strong>IVA:</strong> <span id="iva_usuario">{{ iva }}</span></p>
+        </div>
+    </div>
+<!-- Fin datos de Clientes------------------------------------------------------- -->
+
+
+<hr>
+<!-- Formulario para buscar producto en una sola fila -->
+<div style="display: flex; margin-top: 10px; background-color: #f2f2f2; padding: 8px; border-radius: 5px;"> 
+    <!-- Formulario para buscar producto en una sola fila -->
+    <form id="producto-form" class="flex-wrap mb-3">
+        {% csrf_token %}
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+            <!-- Campo: N° Producto -->
+            <label for="numero_producto" class="me-2 mb-0" style="font-size: 12px;">N° Producto:</label>
+            <input type="text" id="numero_producto" name="numero_producto" class="form-control form-control-sm" 
+                   placeholder="Número Producto" style="width: 100px; font-size: 10px;">
+            <button type="button" id="buscar-mercaderia-numero" class="btn btn-success btn-sm me-2" style="font-size: 10px;">Buscar</button>
+            
+            <!-- Campo: Nombre Producto -->
+            <label for="nombre_producto" class="me-2 mb-0" style="font-size: 12px;">Nombre Producto:</label>
+            <input type="text" id="nombre_producto" name="nombre_producto" class="form-control form-control-sm" 
+                   placeholder="Nombre de Producto" autocomplete="off" style="width: 120px; font-size: 10px;">
+            <!-- Lista de sugerencias con ancho limitado -->
+            <ul id="sugerencias" class="list-group position-absolute" 
+                style="z-index: 1000; display: none; width: 180px; max-width: 180px; 
+                    transform: translateX(200px); background-color: #f8f9fa; 
+                    border: 1px solid #3f5042; border-radius: 5px; padding: 5px;">
+            </ul>
+            <button type="button" id="buscar-mercaderia-nombre" class="btn btn-primary btn-sm" style="font-size: 10px;">Buscar</button>
+        </div>
+    </form>
+</div>
+<hr>
+<!-- fin de Formulario para buscar producto en una sola fila -->
+<style>
+    #buscar-mercaderia-nombre {
+        display: none;
+    }
+</style>
+
+
+<!----------------------------------------- Tabla de la factura -->
+<table class="table table-striped">
+    <thead style="font-size: 12px;">
+        <tr>
+            <th style="color: #0b2c4e;">N° Producto</th>
+            <th style="color: #0b2c4e;">Nombre Producto</th>
+            <th style="color: #0b2c4e;">Cantidad</th>
+            <th style="color: #0b2c4e;">Precio Unitario</th>
+            <th style="color: #0b2c4e;">Importe</th>
+            <th style="color: #0b2c4e;">Borrar</th>
+        </tr>
+    </thead>
+    <tbody id="producto-info">
+        <!-- Filas dinámicas serán añadidas aquí -->
+    </tbody>
+
+    <tfoot style="font-size: 12px;">
+        <tr>
+            <td colspan="4" class="text-end"><strong>Suma:</strong></td>
+            <td id="total-general">$0.00</td>
+        </tr>
+        <tr>
+            <td colspan="4" class="text-end"><strong>Desc. (%):</strong></td>
+            <td>
+                <input type="number" id="descuento" class="form-control" value="0" min="0" max="100" step="1">
+            </td>
+        </tr>
+        <tr>
+            <td colspan="4" class="text-end"><strong>Total:</strong></td>
+            <td id="total-con-descuento">$0.00</td>
+        </tr>
+        <tr>
+            <td colspan="4" class="text-end"><strong>Método de Pago:</strong></td>
+            <td>
+            <div id="seccion-metodos-pago"></div>
+                {% if metodos_pago %}
+                    <select id="metodo-pago" name="metodo_pago" class="form-control" style="font-size: 12px;">
+                        <option value="Efectivo" style="color: green; font-weight: bold;">Efectivo</option>
+                        <option value="Cuenta Corriente" style="color: darkblue; font-weight: bold;">
+                        Cuenta Corriente
+                        </option>
+                        {% for metodo in metodos_pago %}
+                            <option value="{{ metodo.tarjeta_nombre }}">{{ metodo.tarjeta_nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    {% else %}
+                        <p style="color:red;">⚠ No hay métodos de pago disponibles.</p>
+                {% endif %}
+            </div>
+
+<!---- Modal para Cuenta Corriente ---------------------------------------->
+            <div class="modal fade" id="creditoModal" tabindex="-1" aria-labelledby="creditoModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                    <div class="modal-content shadow">
+
+                        <div class="modal-header bg-light border-bottom d-flex flex-column align-items-start">
+                            <small id="metodoPagoSeleccionado" class="text-muted fw-semibold mb-1" style="font-size: 14px;"></small>
+                            <div class="d-flex justify-content-between align-items-center w-100">
+                                <h5 class="modal-title" id="creditoModalLabel" style="color: #0b2c4e; font-weight: bold;">Registrar Cobro</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                            </div>
+                        </div>
+                        <div class="modal-body">
+                        <form id="creditoForm" class="needs-validation" novalidate>
+                
+                            <!-- Número de tarjeta -->
+                            <div class="mb-3">
+                            <label for="tarjeta_numero_credito" class="form-label text-danger fw-semibold">Número Tarjeta:</label>
+                            <input type="text" id="tarjeta_numero_credito" name="tarjeta_numero" class="form-control" maxlength="16" placeholder="Ingrese número de tarjeta" required>
+                            </div>
+                            
+                            <!-- Número de ticket -->
+                            <div class="mb-3">
+                            <label for="numero_ticket_credito" class="form-label text-danger fw-semibold">Número Ticket:</label>
+                            <input type="text" id="numero_ticket_credito" name="numero_tiket" class="form-control" maxlength="16" placeholder="Ingrese número de Ticket" required>
+                            </div>
+                
+                            <!-- ID oculto de la factura -->
+                            <input type="hidden" id="modal-factura-id" name="factura_id" value="">
+                
+                            <!-- Suma -->
+                            <div class="mb-2">
+                            <label class="form-label fw-semibold">Suma: <span class="text-success" id="suma">$0.00</span></label>
+                            </div>
+                
+                            <!-- Interés -->
+                            <div class="mb-3">
+                            <label for="interes" class="form-label text-primary fw-semibold">Ingresar el Interés (%)</label>
+                            <input type="number" id="interes" name="interes" step="0.01" class="form-control" required oninput="calcularInteres()">
+                            </div>
+                
+                            <!-- Interés Calculado -->
+                            <div class="mb-2">
+                            <label class="form-label">Suma * Int / 100: <span id="interesCalculado" class="text-muted">$0.00</span></label>
+                            </div>
+                
+                            <!-- Total con Interés -->
+                            <div class="mb-2">
+                            <label class="form-label">Suma + Interés: <span id="sumaMasInteres" class="text-success">$0.00</span></label>
+                            <input type="hidden" id="totalConInteres" name="total_con_interes">
+                            </div>
+                
+                            <!-- Cuotas -->
+                            <div class="mb-3">
+                            <label for="cuotas" class="form-label text-primary fw-semibold">Cantidad de Cuotas</label>
+                            <input type="number" id="cuotas" name="cuotas" min="1" class="form-control" required oninput="calcularCuotaMensual()">
+                            </div>
+                
+                            <!-- Cuota mensual -->
+                            <div class="mb-3">
+                            <label class="form-label">Cuota Mensual: <span id="cuotaMensual" class="text-success">$0.00</span></label>
+                            </div>
+                
+                            <!-- Botón -->
+                            <div class="text-end">
+                            <button type="button" id="guardarCredito" class="btn btn-primary w-100">Guardar Crédito</button>
+                            </div>
+                        </form>
+                        </div>
+                    </div>
+                    </div>
+            </div>
+<!--------------------- FIN DEL MODAL DE CREDITO  ------------------------>
+
+
+<!--------------------- inicio DEL MODAL DE tarjeta  ------------------------>
+<div class="modal fade" id="modalTarjeta" tabindex="-1" aria-labelledby="modalTarjetaLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content shadow">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title" id="modalTarjetaLabel">Cobro con Tarjeta</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formTarjeta">
+
+        <!-- Número de tarjeta -->
+          <!-- Número de tarjeta -->
+            <div class="mb-3">
+            <label for="tarjeta_numero_tarjeta" class="form-label text-danger fw-semibold">Número Tarjeta:</label>
+            <input type="text" id="tarjeta_numero_tarjeta" name="tarjeta_numero" class="form-control" maxlength="16" placeholder="Ingrese número de tarjeta" required>
+            </div>
+
+          <!-- Número de Ticket -->
+          <div class="mb-3">
+            <label for="numero_ticket_tarjeta" class="form-label">N° Ticket</label>
+            <input type="text" class="form-control" id="numero_ticket_tarjeta" required>
+          </div>
+
+          <!-- Lista de Cuotas -->
+          <div class="mb-3">
+            <label class="form-label">Seleccioná una opción de Cuota</label>
+            <div id="lista-cuotas" class="list-group" style="max-height: 200px; overflow-y: auto;">
+              <!-- Se cargan dinámicamente -->
+            </div>
+
+            <!-- Inputs ocultos para guardar selección -->
+            <input type="hidden" id="cuotas_tarjeta">
+            <input type="hidden" id="interes_tarjeta">
+          </div>
+
+          <!-- Cuota mensual -->
+          <div class="mb-3">
+            <label class="form-label">Cuota Mensual</label>
+            <input type="text" id="cuota_mensual" class="form-control" readonly>
+          </div>
+
+          <!-- Botón -->
+          <div class="text-end">
+            <button type="button" id="guardarTarjeta" class="btn btn-primary w-100">Guardar Tarjeta</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<!--------------------- FIN DEL MODAL DE Tarjeta  ------------------------>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="4"></td>
+            <td style="text-align: center; padding-top: 10px;">
+                <button type="button" id="guardar" class="btn btn-primary btn-sm me-1" style="font-size: 9px;" onclick="redirigirGuardar('{{ factura.id }}')">
+                    Aceptar
+                </button>
+            </td>
+        </tr>
+    </tfoot>
+</table>
+
+<!-- Script para manejar las redirecciones -->
+<!-- Script para manejar cálculos en el modal -->
+<script>
+    function actualizarSuma() {
+        let totalConDescuentoElemento = document.getElementById("total-con-descuento");
+        if (!totalConDescuentoElemento) {
+            console.error("❌ No se encontró el elemento 'total-con-descuento'.");
+            return;
+        }
+        let totalConDescuentoTexto = totalConDescuentoElemento.textContent.replace('$', '').trim();
+        let totalConDescuento = parseFloat(totalConDescuentoTexto) || 0;
+
+        let sumaElemento = document.getElementById("suma");
+        if (!sumaElemento) {
+            console.error("❌ No se encontró el elemento 'suma'.");
+            return;
+        }
+        sumaElemento.textContent = totalConDescuento.toFixed(2);
+
+        console.log("🔄 Suma actualizada desde Total con Descuento:", totalConDescuento);
+
+        calcularInteres();
+    }
+
+    function calcularInteres() {
+        let suma = parseFloat(document.getElementById("suma").textContent) || 0;
+        let interes = parseFloat(document.getElementById("interes").value) || 0;
+
+        let interesCalculado = (suma * interes) / 100;
+        document.getElementById("interesCalculado").textContent = interesCalculado.toFixed(2);
+
+        calcularSumaMasInteres(suma, interesCalculado);
+    }
+
+    function calcularSumaMasInteres(suma, interesCalculado) {
+        let sumaMasInteres = suma + interesCalculado;
+
+        document.getElementById("sumaMasInteres").textContent = sumaMasInteres.toFixed(2);
+        document.getElementById("totalConInteres").value = sumaMasInteres.toFixed(2);
+
+        console.log("📌 total_con_interes actualizado:", sumaMasInteres);
+    }
+
+    function calcularCuotaMensual() {
+        let sumaMasInteres = parseFloat(document.getElementById("sumaMasInteres").textContent) || 0;
+        let cuotas = parseInt(document.getElementById("cuotas").value) || 1;
+
+        let cuotaMensual = sumaMasInteres / cuotas;
+        document.getElementById("cuotaMensual").textContent = cuotaMensual.toFixed(2);
+
+        console.log("💰 Cuota Mensual calculada:", cuotaMensual);
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // ✅ Asegurar que la suma se actualiza al abrir el modal
+        let creditoModal = document.getElementById('creditoModal');
+        if (creditoModal) {
+            creditoModal.addEventListener('show.bs.modal', function () {
+                actualizarSuma();
+            });
+        }
+
+        // ✅ Asegurar que la suma se actualiza cuando cambia el descuento
+        let descuentoInput = document.getElementById("descuento");
+        if (descuentoInput) {
+            descuentoInput.addEventListener("input", function () {
+                calcularTotalGeneral();
+                actualizarSuma();
+            });
+        }
+
+        // ✅ Vincular el evento `oninput` al campo de cuotas
+        let cuotasInput = document.getElementById("cuotas");
+        if (cuotasInput) {
+            cuotasInput.addEventListener("input", function () {
+                calcularCuotaMensual();
+                console.log("📌 Evento detectado en Cant Cuot, ejecutando calcularCuotaMensual()");
+            });
+        } else {
+            console.error("❌ No se encontró el elemento 'cuotas'.");
+        }
+
+        // ✅ Asegurar que la suma se actualiza al cargar la página
+        actualizarSuma();
+    });
+</script>
+
+
+
+
+<!-- Script para buscar, manejar cálculos y eliminar filas 88888888888-->
+<script>
+function agregarProductoATabla(data) {
+    if (data.error) {
+        alert(data.error);
+    } else {
+        const tableBody = document.getElementById('producto-info');
+        const newRow = document.createElement('tr');
+
+        // Crear celdas para la fila
+        const cellNumero = document.createElement('td');
+        const cellNombre = document.createElement('td');
+        const cellCantidadVendida = document.createElement('td'); // Cambiado
+        const cellPrecioUnitario = document.createElement('td'); // Cambiado
+        const cellSubtotal = document.createElement('td'); // Cambiado
+        const cellEliminar = document.createElement('td');
+
+        // Validar y asignar valores a las celdas
+        cellNumero.textContent = data.numero_producto ? data.numero_producto : 'N/A';
+        cellNombre.textContent = data.nombre_producto ? data.nombre_producto : 'N/A';
+
+        const precioUnitario = parseFloat(data.precio) || 0;
+
+        // Campo de entrada para el precio unitario
+        const inputPrecioUnitario = document.createElement('input'); // Cambiado
+        inputPrecioUnitario.type = 'number';
+        inputPrecioUnitario.value = precioUnitario.toFixed(2);
+        inputPrecioUnitario.min = 0;
+        inputPrecioUnitario.className = 'form-control';
+        inputPrecioUnitario.disabled = true; // No editable
+        cellPrecioUnitario.appendChild(inputPrecioUnitario);
+
+        // Campo de entrada para la cantidad vendida
+        const inputCantidadVendida = document.createElement('input'); // Cambiado
+        inputCantidadVendida.type = 'number';
+        inputCantidadVendida.value = 1; // Cantidad inicial
+        inputCantidadVendida.min = 0.01;
+        inputCantidadVendida.step = 0.01;
+        inputCantidadVendida.className = 'form-control';
+        inputCantidadVendida.addEventListener('input', function () {
+            const subtotal = parseFloat(inputCantidadVendida.value) * parseFloat(inputPrecioUnitario.value || 0);
+            inputSubtotal.value = subtotal.toFixed(2);
+            calcularTotalGeneral();
+        });
+        cellCantidadVendida.appendChild(inputCantidadVendida);
+
+        // Campo de entrada para el subtotal
+        const inputSubtotal = document.createElement('input'); // Cambiado
+        inputSubtotal.type = 'number';
+        inputSubtotal.value = (precioUnitario * parseFloat(inputCantidadVendida.value)).toFixed(2); // Importe inicial
+        inputSubtotal.min = 0;
+        inputSubtotal.step = 0.01;
+        inputSubtotal.className = 'form-control';
+        inputSubtotal.addEventListener('input', function () {
+            const nuevoSubtotal = parseFloat(inputSubtotal.value) || 0;
+            const nuevaCantidad = nuevoSubtotal > 0 ? (nuevoSubtotal / precioUnitario).toFixed(2) : 0;
+            inputCantidadVendida.value = nuevaCantidad; // Ajustar cantidad automáticamente
+            calcularTotalGeneral();
+        });
+        cellSubtotal.appendChild(inputSubtotal);
+
+        // Botón para eliminar la fila
+        const btnEliminar = document.createElement('button');
+        btnEliminar.className = 'btn btn-danger btn-sm';
+        btnEliminar.textContent = 'Eliminar';
+        btnEliminar.addEventListener('click', function () {
+            newRow.remove(); // Eliminar la fila
+            calcularTotalGeneral(); // Recalcular el total general
+        });
+        cellEliminar.appendChild(btnEliminar);
+
+        // Añadir celdas a la fila
+        newRow.appendChild(cellNumero);
+        newRow.appendChild(cellNombre);
+        newRow.appendChild(cellCantidadVendida);
+        newRow.appendChild(cellPrecioUnitario);
+        newRow.appendChild(cellSubtotal);
+        newRow.appendChild(cellEliminar);
+
+        // Añadir fila a la tabla
+        tableBody.appendChild(newRow);
+
+        // Recalcular el total general
+        calcularTotalGeneral();
+    }
+    }
+
+// Función para buscar por número de producto
+document.getElementById('buscar-mercaderia-numero').addEventListener('click', function () {
+        const numeroProducto = document.getElementById('numero_producto').value;
+
+        fetch(`/modulo1/buscar-mercaderia/?numero_producto=${numeroProducto}`)
+            .then(response => {
+                if (!response.ok) throw new Error('Error al buscar la mercadería');
+                return response.json();
+            })
+            .then(data => agregarProductoATabla(data))
+            .catch(error => {
+                console.error(error);
+                alert('Ocurrió un error al buscar la mercadería por número.');
+            });
+    });
+
+
+// Función para buscar por nombre de producto
+document.getElementById('buscar-mercaderia-nombre').addEventListener('click', function () {
+        const nombreProducto = document.getElementById('nombre_producto').value;
+
+        fetch(`/modulo1/buscar-mercaderia/?nombre_producto=${encodeURIComponent(nombreProducto)}`)
+            .then(response => {
+                if (!response.ok) throw new Error('Error al buscar la mercadería');
+                return response.json();
+            })
+            .then(data => agregarProductoATabla(data))
+            .catch(error => {
+                console.error(error);
+                alert('Ocurrió un error al buscar la mercadería por nombre.');
+            });
+    });
+
+
+// Función para calcular el total general y con descuento
+function calcularTotalGeneral() {
+    const rows = document.querySelectorAll('#producto-info tr');
+    let totalGeneral = 0;
+
+    rows.forEach(row => {
+        const importeInput = row.cells[4].querySelector('input'); // Obtener el <input> del importe
+        if (importeInput) {
+            totalGeneral += parseFloat(importeInput.value || 0); // Sumar el valor del input
+        }
+    });
+
+    document.getElementById('total-general').textContent = `$${totalGeneral.toFixed(2)}`;
+    const descuentoPorcentaje = parseFloat(document.getElementById('descuento').value) || 0;
+    const totalConDescuento = totalGeneral - (totalGeneral * (descuentoPorcentaje / 100));
+    document.getElementById('total-con-descuento').textContent = `$${totalConDescuento.toFixed(2)}`;
+    }
+
+    document.getElementById('descuento').addEventListener('input', calcularTotalGeneral);
+</script>
+
+
+
+<script>
+// Por Nombre de producto
+document.getElementById('nombre_producto').addEventListener('input', function () {
+    const query = this.value;
+    const sugerencias = document.getElementById('sugerencias');
+
+    if (query.trim()) {
+        fetch(`/modulo1/buscar-mercaderia/?nombre_producto=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                sugerencias.innerHTML = '';
+                sugerencias.style.display = 'block';
+
+                if (data.length === 0) {
+                    sugerencias.style.display = 'none';
+                } else {
+                    data.forEach(producto => {
+                        const item = document.createElement('li');
+                        item.className = 'list-group-item list-group-item-action';
+                        item.textContent = producto.nombre_producto;
+
+                        // Guardar datos adicionales en atributos data
+                        item.setAttribute('data-numero-producto', producto.numero_producto);
+                        item.setAttribute('data-precio', producto.precio);
+
+                        item.addEventListener('click', function () {
+                            document.getElementById('nombre_producto').value = producto.nombre_producto;
+                            document.getElementById('numero_producto').value = producto.numero_producto;
+
+                            // Actualizar tabla con datos del producto seleccionado
+                            agregarProductoATabla({
+                                numero_producto: producto.numero_producto,
+                                nombre_producto: producto.nombre_producto,
+                                precio: producto.precio,
+                            });
+
+                            sugerencias.style.display = 'none';
+                        });
+
+                        sugerencias.appendChild(item);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error al buscar sugerencias:', error);
+                sugerencias.style.display = 'none';
+            });
+    } else {
+        sugerencias.style.display = 'none';
+    }
+});
+
+// --------GUARDAR producto--------------------------------GUARDAR producto
+// --------GUARDAR producto--------------------------------GUARDAR producto
+// --------GUARDAR producto--------------------------------GUARDAR producto
+
+document.getElementById('guardar').addEventListener('click', function () {
+    const guardarBtn = document.getElementById('guardar');
+    if (guardarBtn.disabled) return;
+
+    guardarBtn.disabled = true;
+    guardarBtn.textContent = "Guardando...";
+
+    const fecha = new Date().toISOString().split('T')[0];
+    const dniCliente = document.getElementById('dni_cliente_hidden')?.value.trim() || '';
+    const nombreCliente = document.querySelector('p:nth-of-type(1) strong')?.nextSibling?.textContent.trim() || '';
+    const apellidoCliente = document.querySelector('p:nth-of-type(2) strong')?.nextSibling?.textContent.trim() || '';
+    const domicilioFactura = document.getElementById("domicilio_usuario")?.textContent?.trim() || '';
+    const cuilFactura = document.getElementById("cuil_usuario")?.textContent?.trim() || '';
+    const ivaFactura = document.getElementById("iva_usuario")?.textContent?.trim() || '';
+
+    const metodoPago = document.getElementById('metodo-pago').value || '';
+    const total = parseFloat(document.getElementById('total-general').textContent.replace('$', '')) || 0;
+    const descuento = parseFloat(document.getElementById('descuento').value) || 0;
+    const totalConDescuento = total - (total * (descuento / 100));
+
+    
+    const detalleProductos = [];
+    document.querySelectorAll('#producto-info tr').forEach(row => {
+        const numeroProducto = row.cells[0]?.textContent || '';
+        const nombreProducto = row.cells[1]?.textContent || '';
+        const cantidadVendida = parseFloat(row.cells[2]?.querySelector('input')?.value || 0);
+        const precioUnitario = parseFloat(row.cells[3]?.querySelector('input')?.value || 0);
+        const subtotal = parseFloat(row.cells[4]?.querySelector('input')?.value || 0);
+
+        if (numeroProducto && nombreProducto && cantidadVendida && precioUnitario && subtotal) {
+            detalleProductos.push({
+                numero_producto: numeroProducto,
+                nombre_producto: nombreProducto,
+                cantidad_vendida: cantidadVendida,
+                precio_unitario: precioUnitario,
+                subtotal: subtotal,
+            });
+        }
+    });
+
+    const payload = {
+        fecha: fecha,
+        dni_cliente: dniCliente,
+        nombre_cliente: nombreCliente,
+        apellido_cliente: apellidoCliente,
+        domicilio_factura: domicilioFactura,
+        cuil: cuilFactura,
+        iva: ivaFactura,
+        metodo_pago: metodoPago,
+        tarjeta_nombre: tarjetaNombre,  // ✅ Se envía solo si es necesario
+        tarjeta_numero: tarjetaNumero,  // ✅ Se envía solo si es necesario
+        total: total,
+        descuento: descuento,
+        total_con_descuento: totalConDescuento,
+        detalle_productos: detalleProductos,
+    };
+
+    console.log("📨 Enviando datos al backend:", payload);
+
+    fetch('/modulo1/guardar-prueba/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+        body: JSON.stringify(payload),
+    })
+
+    .then(response => response.json())
+    .then(data => {
+        if (data.redirect) {
+            console.log("🔄 Redirigiendo a:", data.redirect);
+            window.location.href = data.redirect;
+        } else if (data.error) {
+            alert(data.error);
+        }
+    })
+    .catch(error => {
+        console.error("❌ Error en la petición:", error);
+        alert("Ocurrió un error al guardar la factura.");
+    });
+});
+
+//------------------- Función para limpiar el formulario ------- después de guardar
+//-------------------- Función para limpiar el formulario después de guardar
+
+function limpiarFormulario() {
+    // Limpiar todos los campos del formulario
+    document.getElementById('dni_cliente').value = '';
+    document.querySelector('p:nth-of-type(1) strong').nextSibling.textContent = '';
+    document.querySelector('p:nth-of-type(2) strong').nextSibling.textContent = '';
+    document.querySelector('p:nth-of-type(3) strong').nextSibling.textContent = '';
+    document.getElementById('numero_producto').value = '';
+    document.getElementById('nombre_producto').value = '';
+    document.getElementById('producto-info').innerHTML = '';
+    document.getElementById('total-general').textContent = '$0.00';
+    document.getElementById('descuento').value = 0;
+    document.getElementById('total-con-descuento').textContent = '$0.00';
+    document.getElementById('metodo-pago').value = 'Efectivo';
+    // Opcional: reiniciar el número de factura
+    document.getElementById('numero_factura').textContent = '00000';
+    }
+</script>
+
+<!------------------------------------------------------------------------->
+<!-- Script para manejar el método de pago y mostrar el modal de crédito -->
+<!-- Script para manejar el método de pago y mostrar el modal de crédito -->
+<!-- Script para manejar el método de pago y mostrar el modal de crédito -->
+
+<script>
+document.getElementById('metodo-pago').addEventListener('change', function () {
+    const metodoPago = this.value;
+
+    if (metodoPago === "Efectivo") {
+        guardarFactura("guardar");
+    } else if (metodoPago === "Cuenta Corriente") {
+        let creditoModal = new bootstrap.Modal(document.getElementById('creditoModal'));
+        creditoModal.show();
+    } else {
+        // Si es tarjeta (cualquier otro método registrado)
+        document.getElementById('modalTarjetaLabel').textContent = `Cobro con: ${metodoPago}`;
+        let modalTarjeta = new bootstrap.Modal(document.getElementById('modalTarjeta'));
+        modalTarjeta.show();
+    }
+});
+
+
+// ✅ Solo guardar si el usuario presiona "Guardar Crédito"
+document.getElementById('guardarCredito').addEventListener('click', function () {
+    let modalElement = document.getElementById('creditoModal');
+    modalElement.dataset.confirmado = "true"; // ✅ Marcamos que el usuario confirmó el pago
+    guardarFactura("guardarCredito");
+});
+
+
+// ✅ Botón de efectivo sigue funcionando normalmente
+document.getElementById('guardar').addEventListener('click', function () {
+    guardarFactura("guardar");
+});
+
+
+// ✅ ------------ guardar Factura ----------------------------
+function guardarFactura(origen) {
+    console.log(`📌 Guardando desde: ${origen}`);
+
+    const guardarBtn = document.getElementById('guardar');
+    guardarBtn.disabled = true;
+    guardarBtn.textContent = "Guardando...";
+
+    const fecha = new Date().toISOString().split('T')[0];
+    const dniCliente = document.getElementById('dni_cliente')?.value.trim() || '';
+    const nombreCliente = document.querySelector('p:nth-of-type(1) strong')?.nextSibling?.textContent.trim() || '';
+    const apellidoCliente = document.querySelector('p:nth-of-type(2) strong')?.nextSibling?.textContent.trim() || '';
+    const domicilioFactura = document.getElementById("domicilio_usuario")?.textContent?.trim() || '';
+    const cuilFactura = document.getElementById("cuil_usuario")?.textContent?.trim() || '';
+    const ivaFactura = document.getElementById("iva_usuario")?.textContent?.trim() || '';
+    // ✅ Capturar el método de pago seleccionado
+    const metodoPago = document.getElementById('metodo-pago')?.value.trim() || '';
+
+    const total = parseFloat(document.getElementById('total-general')?.textContent.replace('$', '').trim()) || 0;
+    const descuento = parseFloat(document.getElementById('descuento')?.value.trim()) || 0;
+    const totalConDescuento = total - (total * (descuento / 100));
+
+    let tarjetaNombre = '';
+    let tarjetaNumero = '';
+    let numeroTicket = '';  // ✅ <-- AGREGALO ACÁ
+    let interes = 0;
+    let cuotas = 1;
+    let totalConInteres = totalConDescuento;
+    let cuotaMensual = 0;  // ✅ Asegurar que `cuotaMensual` siempre se defina
+
+    // ✅ Si se está guardando desde el modal de crédito, capturar los valores correctos
+    if (origen === "guardarCredito" || document.getElementById("creditoModal").classList.contains("show")) {
+        tarjetaNumero = document.getElementById('tarjeta_numero_credito')?.value.trim() || '';
+        tarjetaNombre = metodoPago; 
+        numeroTicket = document.getElementById('numero_ticket_credito')?.value.trim() || '';
+
+        // Capturar interés, cuotas y total con interés
+        interes = parseFloat(document.getElementById('interes')?.value.trim() || 0);
+        cuotas = parseInt(document.getElementById('cuotas')?.value.trim() || 1);
+        totalConInteres = parseFloat(document.getElementById('totalConInteres')?.value.trim() || totalConDescuento);
+    }
+
+    if (origen === "guardarTarjeta" || document.getElementById("modalTarjeta").classList.contains("show")) {
+        tarjetaNumero = document.getElementById('tarjeta_numero_tarjeta')?.value.trim() || '';  // 👈 CORREGIDO
+        tarjetaNombre = metodoPago;
+        numeroTicket = document.getElementById('numero_ticket_tarjeta')?.value.trim() || '';
+        cuotas = parseInt(document.getElementById('cuotas_tarjeta')?.value.trim() || 1);
+        interes = parseFloat(document.getElementById('interes_tarjeta')?.value.trim() || 0);
+
+        const total = parseFloat(document.getElementById('total-con-descuento').textContent.replace('$', '')) || 0;
+        totalConInteres = total + (total * (interes / 100));
+        cuotaMensual = (totalConInteres / cuotas).toFixed(2);
+    }
+
+    // ✅ Calcular la cuota mensual SIEMPRE (si no se envió desde el modal)
+    cuotaMensual = cuotas > 0 ? (totalConInteres / cuotas).toFixed(2) : 0;
+
+    // ✅ Mostrar en consola los valores capturados para depuración
+    console.log("📌 Método de pago:", metodoPago);
+    console.log("📌 Nombre en tarjeta:", tarjetaNombre);
+    console.log("📌 Número de tarjeta:", tarjetaNumero);
+    console.log("📌 Interés (%):", interes);
+    console.log("📌 Cuotas:", cuotas);
+    console.log("📌 Total con interés:", totalConInteres);
+    console.log("💰 Cuota Mensual calculada:", cuotaMensual);  // ✅ Depuración
+
+    // ✅ Capturar productos agregados en la factura
+    const detalleProductos = [];
+    document.querySelectorAll('#producto-info tr').forEach(row => {
+        const numeroProducto = row.cells[0]?.textContent || '';
+        const nombreProducto = row.cells[1]?.textContent || '';
+        const cantidadVendida = parseFloat(row.cells[2]?.querySelector('input')?.value || 0);
+        const precioUnitario = parseFloat(row.cells[3]?.querySelector('input')?.value || 0);
+        const subtotal = parseFloat(row.cells[4]?.querySelector('input')?.value || 0);
+
+        if (numeroProducto && nombreProducto && cantidadVendida && precioUnitario && subtotal) {
+            detalleProductos.push({
+                numero_producto: numeroProducto,
+                nombre_producto: nombreProducto,
+                cantidad_vendida: cantidadVendida,
+                precio_unitario: precioUnitario,
+                subtotal: subtotal,
+            });
+        }
+    });
+
+    // ✅ Crear el objeto a enviar al backend
+    const payload = {
+        fecha: fecha,
+        dni_cliente: dniCliente,
+        nombre_cliente: nombreCliente,
+        apellido_cliente: apellidoCliente,
+        domicilio_factura: domicilioFactura,
+        cuil: cuilFactura,
+        iva: ivaFactura,
+        metodo_pago: metodoPago,
+        tarjeta_nombre: tarjetaNombre,
+        tarjeta_numero: tarjetaNumero,
+        numero_tiket: numeroTicket,  // ✅ AGREGADO
+        total: total,
+        descuento: descuento,
+        total_con_descuento: totalConDescuento,
+        interes: interes,  
+        cuotas: cuotas,  
+        cuota_mensual: cuotaMensual,  // ✅ Se envía SIEMPRE
+        total_con_interes: totalConInteres,  
+        detalle_productos: detalleProductos,
+    };
+
+    console.log("📨 Enviando datos al backend:", JSON.stringify(payload, null, 2));
+
+    // ✅ Enviar la factura al backend
+    fetch('/modulo1/guardar-prueba/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+        body: JSON.stringify(payload),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.redirect) {
+            console.log("🔄 Redirigiendo a:", data.redirect);
+            window.location.href = data.redirect;
+        } else if (data.error) {
+            alert(data.error);
+        }
+    })
+    .catch(error => {
+        console.error("❌ Error en la petición:", error);
+        alert("Ocurrió un error al guardar la factura.");
+    })
+    .finally(() => {
+        guardarBtn.disabled = false;
+        guardarBtn.textContent = "Aceptar";
+    });
+}
+</script>
+
+
+<script>
+// Al cambiar el método de pago
+document.getElementById('metodo-pago').addEventListener('change', function () {
+    const metodoPago = this.value;
+
+    // Si es efectivo → guardar directo
+    if (metodoPago === "Efectivo") {
+        guardarFactura("guardar");
+        return;
+    }
+
+
+// Si es Cuenta Corriente → abrir modal clásico
+    if (metodoPago === "Cuenta Corriente") {
+        new bootstrap.Modal(document.getElementById('creditoModal')).show();
+        return;
+    }
+
+
+
+// Si es tarjeta → abrir el nuevo modal y cargar cuotas
+document.getElementById('modalTarjetaLabel').textContent = `Cobro con: ${metodoPago}`;
+    const modalTarjeta = new bootstrap.Modal(document.getElementById('modalTarjeta'));
+    modalTarjeta.show();
+
+    // Traer cuotas desde backend
+    fetch(`/modulo1/api/cuotas/${encodeURIComponent(metodoPago)}/`)
+        .then(res => res.json())
+        .then(data => {
+            const lista = document.getElementById('lista-cuotas');
+            lista.innerHTML = '';
+
+            if (data.length === 0) {
+                lista.innerHTML = '<div class="text-danger">⚠ No hay cuotas disponibles para esta tarjeta.</div>';
+                return;
+            }
+
+
+        // Reemplazá esta parte del código dentro del fetch de cuotas
+        data.forEach(item => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'list-group-item list-group-item-action';
+            btn.textContent = `${item.cuotas} cuota(s) - ${item.interes}% interés`;
+
+            btn.addEventListener('click', () => {
+                // ✅ Guardar valores en inputs ocultos
+                document.getElementById('cuotas_tarjeta').value = item.cuotas;
+                document.getElementById('interes_tarjeta').value = item.interes;
+
+                // ✅ Calcular cuota mensual
+                const total = parseFloat(document.getElementById('total-con-descuento').textContent.replace('$', '')) || 0;
+                const totalConInteres = total + (total * (item.interes / 100));
+                const cuotaMensual = totalConInteres / item.cuotas;
+
+                document.getElementById('cuota_mensual').value = `$${cuotaMensual.toFixed(2)}`;
+
+                // ✅ Activar botón visualmente
+                document.querySelectorAll('#lista-cuotas .list-group-item').forEach(el => el.classList.remove('active'));
+                btn.classList.add('active');
+
+                console.log("✅ Cuota seleccionada correctamente:", item);
+            });
+
+            lista.appendChild(btn);
+        });
+
+
+
+
+        })
+        .catch(err => {
+            console.error("Error al cargar cuotas:", err);
+            document.getElementById('lista-cuotas').innerHTML = '<div class="text-danger">Error al obtener cuotas.</div>';
+        });
+});
+</script>
+
+
+
+<script>
+document.getElementById('guardarTarjeta').addEventListener('click', function () {
+    const tarjetaNumeroInput = document.getElementById('tarjeta_numero_tarjeta');  // 👈 CAMBIADO
+    const ticketInput = document.getElementById('numero_ticket_tarjeta');
+    const cuotasInput = document.getElementById('cuotas_tarjeta');
+    const interesInput = document.getElementById('interes_tarjeta');
+
+    const tarjetaNumero = tarjetaNumeroInput?.value.trim() || '';
+    const ticketNumero = ticketInput?.value.trim() || '';
+    const cuotasStr = cuotasInput?.value.trim() || '';
+    const interesStr = interesInput?.value.trim() || '';
+
+    if (!tarjetaNumero || !ticketNumero || !cuotasStr || !interesStr) {
+        alert("⚠ Por favor, completá todos los campos y seleccioná una cuota válida.");
+        return;
+    }
+
+    const cuotas = parseInt(cuotasStr);
+    const interes = parseFloat(interesStr);
+
+    if (isNaN(cuotas) || isNaN(interes) || cuotas <= 0 || interes < 0) {
+        alert("⚠ Los datos de la cuota son inválidos. Por favor, volvé a seleccionar.");
+        return;
+    }
+    const totalBase = parseFloat(document.getElementById('total-con-descuento')?.textContent.replace('$', '').trim()) || 0;
+    const totalConInteres = totalBase + (totalBase * (interes / 100));
+    const cuotaMensual = (totalConInteres / cuotas).toFixed(2);
+
+    document.getElementById('cuota_mensual').value = `$${cuotaMensual}`;
+
+    guardarFactura("guardarTarjeta");
+});
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const selectMetodo = document.getElementById('metodo-pago');
+    const seccionPago = document.getElementById('seccion-metodos-pago');
+
+    if (selectMetodo) {
+        selectMetodo.addEventListener('change', function () {
+            const valor = this.value;
+
+            if (valor === "Cuenta Corriente") {
+                seccionPago.style.display = 'none';
+                new bootstrap.Modal(document.getElementById('creditoModal')).show();
+            } else if (valor !== "Efectivo") {
+                seccionPago.style.display = 'none';
+                new bootstrap.Modal(document.getElementById('modalTarjeta')).show();
+            }
+            // Si es "Efectivo", se sigue con el flujo normal
+        });
+    }
+
+    // Cuando se cierra cualquier modal → volver a mostrar la selección
+    ['creditoModal', 'modalTarjeta'].forEach(function (id) {
+        const modalEl = document.getElementById(id);
+        if (modalEl) {
+            modalEl.addEventListener('hidden.bs.modal', function () {
+                seccionPago.style.display = 'block';
+                selectMetodo.value = ""; // Limpiamos selección para evitar que se dispare de nuevo
+            });
+        }
+    });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const selectMetodo = document.getElementById('metodo-pago');
+    const seccionPago = document.getElementById('seccion-metodos-pago');
+
+    // Evento al cambiar el método de pago
+    if (selectMetodo) {
+        selectMetodo.addEventListener('change', function () {
+            const valor = this.value;
+
+            if (valor === "Cuenta Corriente") {
+                seccionPago.style.display = 'none';
+                const modalCredito = new bootstrap.Modal(document.getElementById('creditoModal'), {
+                    backdrop: 'static',
+                    keyboard: true
+                });
+                modalCredito.show();
+            } else if (valor !== "Efectivo") {
+                seccionPago.style.display = 'none';
+                const modalTarjeta = new bootstrap.Modal(document.getElementById('modalTarjeta'), {
+                    backdrop: 'static',
+                    keyboard: true
+                });
+                modalTarjeta.show();
+            }
+            // Efectivo no abre modal
+        });
+    }
+
+    // Cuando se cierra cualquier modal → volver a mostrar la selección
+    ['creditoModal', 'modalTarjeta'].forEach(function (id) {
+        const modalEl = document.getElementById(id);
+        if (modalEl) {
+            modalEl.addEventListener('hidden.bs.modal', function () {
+                seccionPago.style.display = 'block';
+                selectMetodo.value = ""; // Limpiar la selección para evitar loops
+                document.body.classList.remove('modal-open'); // Forzar quitar clase si quedó
+                const backdrops = document.querySelectorAll('.modal-backdrop');
+                backdrops.forEach(b => b.remove()); // Eliminar manualmente si quedó
+            });
+        }
+    });
+});
+</script>
+
+<script src="{% static 'path/to/your/javascript.js' %}"></script>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</div> 
+
+{% endblock %}
+    <script src="{% static 'path/to/your/javascript.js' %}"></script>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

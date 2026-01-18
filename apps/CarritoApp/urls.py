@@ -123,13 +123,14 @@ urlpatterns = [
 
     path('pago/<int:pago_id>/imagen/subir/', views.subir_imagen_pago, name='subir_imagen_pago'),
     path('pago/<int:pago_id>/imagen/eliminar/', views.eliminar_imagen_pago, name='eliminar_imagen_pago'),
-
    
     path(
-        "facturas/<int:factura_id>/estado/", views.actualizar_estado_entrega, name="actualizar_estado_entrega",
-    ),
+        "facturas/<int:factura_id>/estado/", views.actualizar_estado_entrega, name="actualizar_estado_entrega"),
 
-
+    path("caja/factura/<int:factura_id>/eliminar/", views.eliminar_factura_caja, name="eliminar_factura_caja"),
+    path("caja/pago/<int:pago_id>/eliminar/", views.eliminar_pago_caja, name="eliminar_pago_caja"),
+ 
+    
 ]
 #---------------------------------------------------------------------------------------------
          

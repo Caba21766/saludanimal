@@ -5,13 +5,11 @@ from django.core.exceptions import ValidationError
 from django.core.files.images import get_image_dimensions
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.conf import settings
-
 from io import BytesIO
 from pathlib import Path
 from PIL import Image, ImageFile
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True  # evita errores con JPG "raros"
-
 User = get_user_model()
 
 # ====== Config de imágenes (podés mover a settings.py) ======
@@ -71,21 +69,49 @@ def limpiar_y_optimizar(imagen):
     return optimizada
 
 
-# -------------------- REGISTRO --------------------
+# -------------------- REGISTRO AlTA Minima --------------------
 class RegistrarseForm(UserCreationForm):
-    cuil = forms.CharField(max_length=13, required=True, label="CUIL")
-    iva = forms.ChoiceField(choices=User._meta.get_field('iva').choices, required=True, label="Condición de IVA")
-    imagen_usuario = forms.ImageField(required=False, label="Imagen de Perfil")
-
     class Meta:
         model = User
-        # No incluimos 'username'; lo generamos con el DNI en save()
         fields = [
-            'first_name', 'last_name', 'email',
-            'dni_usuario', 'domicilio_usuario', 'tel1_usuario', 'tel2_usuario',
-            'cuil', 'iva', 'imagen_usuario',
-            'password1', 'password2'
+            'first_name',
+            'last_name',
+            'dni_usuario',
+            'domicilio_usuario',
+            'tel1_usuario',
+            'password1',
+            'password2'
         ]
+        # 🔹 Etiquetas visibles en el navegador
+        labels = {
+            'first_name': 'Nombre',
+            'last_name': 'Apellido',
+            'dni_usuario': 'DNI',
+            'domicilio_usuario': 'Domicilio',
+            'tel1_usuario': 'Tel o Celular ',
+            'password1': 'Contraseña',
+            'password2': 'Confirmación de contraseña',
+        }
+        # 🔹 Placeholders / clases Bootstrap (opcional)
+        widgets = {
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ingresá tu nombre'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ingresá tu Apellido'}),
+            'dni_usuario': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Solo números'}),
+            'domicilio_usuario': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Calle y número'}),
+            'tel1_usuario': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 3644 555555'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Sacar help_texts y setear labels de password por si acaso
+        self.fields['password1'].help_text = ''
+        self.fields['password2'].help_text = ''
+        self.fields['password1'].label = 'Contraseña'
+        self.fields['password2'].label = 'Confirmación de contraseña'
+
+        # Asegurar clase en todos los widgets (incluye passwords)
+        for name, f in self.fields.items():
+            f.widget.attrs.setdefault('class', 'form-control')
 
     # --- Validaciones ---
     def clean_dni_usuario(self):
@@ -93,14 +119,8 @@ class RegistrarseForm(UserCreationForm):
         if not dni.isdigit():
             raise ValidationError("El DNI debe contener solo números.")
         if User.objects.filter(dni_usuario=dni).exists():
-            raise ValidationError("⚠️ Ya existe un usuario registrado con este DNI.")
+            raise ValidationError("⚠️ Ya esta registrado este DNI.")
         return dni
-
-    def clean_imagen_usuario(self):
-        imagen = self.cleaned_data.get('imagen_usuario')
-        if imagen:
-            imagen = limpiar_y_optimizar(imagen)
-        return imagen
 
     # --- Guardado ---
     def save(self, commit=True):
@@ -114,8 +134,7 @@ class RegistrarseForm(UserCreationForm):
             user.save()
         return user
 
-
-# -------------------- EDICIÓN DE PERFIL --------------------
+# -------------------- EDICIÓN DE PERFIL o modificacion --------------------
 class EditarUsuarioForm(forms.ModelForm):
     imagen_usuario = forms.ImageField(required=False, label="Imagen de Perfil")
 
@@ -157,6 +176,7 @@ class CustomLoginForm(AuthenticationForm):
             'id': 'dni',
         })
     )
+
     password = forms.CharField(
         label="Contraseña",
         widget=forms.PasswordInput(attrs={

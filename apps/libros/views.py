@@ -1,14 +1,13 @@
 from datetime import datetime
 from decimal import Decimal
-
 from django.db.models import Q, Sum, Value, DecimalField
 from django.db.models.functions import Coalesce
 from django.shortcuts import render
-
 from apps.CarritoApp.models import Factura, CuentaCorriente, MetodoPago
 
 def listar_ctacorriente(request):
     dni_cliente = (request.GET.get('dni_cliente') or '').strip()
+    apellido_cliente = (request.GET.get('apellido_cliente') or '').strip()
     fecha = (request.GET.get('fecha') or '').strip()
 
     base_qs = Factura.objects.filter(
@@ -18,8 +17,18 @@ def listar_ctacorriente(request):
 
     if request.user.is_staff:
         facturas = base_qs
+
+        # ✅ filtro DNI (parcial)
         if dni_cliente:
-            facturas = facturas.filter(dni_cliente=dni_cliente)
+            facturas = facturas.filter(dni_cliente__icontains=dni_cliente)
+
+        # ✅ filtro APELLIDO (parcial, ignorando mayúsc/minúsc)
+        if apellido_cliente:
+            facturas = facturas.filter(
+                Q(apellido_cliente__isnull=False, apellido_cliente__istartswith=apellido_cliente) |
+                Q(nombre_cliente__isnull=False, nombre_cliente__istartswith=apellido_cliente)
+            )
+
     else:
         facturas = base_qs.filter(dni_cliente=getattr(request.user, "dni_usuario", None))
 
@@ -33,7 +42,6 @@ def listar_ctacorriente(request):
 
     facturas = facturas.order_by('-numero_factura')
 
-    # 👉 Valor cero decimal para Coalesce
     ZERO = Value(Decimal('0.00'),
                  output_field=DecimalField(max_digits=12, decimal_places=2))
 
@@ -74,7 +82,6 @@ def listar_ctacorriente(request):
         'deuda_por_factura': deuda_por_factura,
         'metodos_pago': metodos_pago,
     })
-
 
 
 

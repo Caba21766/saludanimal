@@ -1,21 +1,16 @@
 {% extends 'base.html' %}
 {% load static %}
-
 {% block navegacion %}
 {% include 'navegacion.html' %}
 {% endblock %}
-
-
+<!-- 🔹 ok-- de 10 -->
+<!-- 🔹 ok-- de 10 -->
+<!-- 🔹 ok-- de 10 -->
+<!-- 🔹 ok-- de 10 -->
+ 
 {% block contenido %}
 <div class="container">
 <!-- 🔹 Mostrar mensaje si el usuario NO está autenticado -->
-    {% if not user.is_authenticated %}
-        <div class="container text-center mt-3">
-            <div class="alert alert-danger custom-error-message mx-auto" role="alert">
-                Hola..., Inicia Sesión o Registrate para hacer compras.
-            </div>
-        </div>
-    {% endif %}
 
 
 <style>
@@ -54,7 +49,6 @@
     box-shadow: none !important;
 }
 
-
 /* Ajuste para mejorar la visibilidad */
 .carousel-control-prev,
 .carousel-control-next {
@@ -77,6 +71,69 @@
         letter-spacing: 0.5px;
     }
 </style>
+
+
+<style>
+/* ===== Ajustes para que 2 tarjetas en móvil se vean bien ===== */
+@media (max-width: 576px){
+
+  /* achica imagen del carrusel */
+  .carousel-item img{
+    height: 170px;
+    object-fit: cover;
+  }
+
+  /* achica padding y letras */
+  .card-body{
+    padding: .55rem;
+  }
+
+  .card-title{
+    font-size: .95rem;
+    margin-bottom: .35rem;
+    line-height: 1.15;
+  }
+
+  .card-text{
+    font-size: .78rem;
+    margin-bottom: .35rem;
+    line-height: 1.15;
+  }
+
+  /* botones más compactos */
+  .card-body .btn{
+    font-size: .72rem;
+    padding: .25rem .45rem;
+  }
+
+  /* espacio entre columnas más prolijo */
+  .row.g-3{
+    --bs-gutter-x: .75rem;
+    --bs-gutter-y: .75rem;
+  }
+
+  /* bordes más lindos */
+  .card{
+    border-radius: 12px;
+  }
+}
+</style>
+
+
+<style>
+@media (max-width: 576px){
+  .card-title{
+    display: -webkit-box;
+    -webkit-line-clamp: 2;   /* máximo 2 líneas */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+</style>
+
+
+
+
 
 
     <!--<div class="row">
@@ -109,7 +166,8 @@
 
 </div>
         <div class="col-12 col-md-4 text-end mt-2 mt-md-0">
-            <a href="{% url 'CarritoApp:ver_carrito' %}" class="btn btn-secondary btn-sm position-relative">
+           <a href="{% url 'ver_carrito' %}" class="btn btn-secondary btn-sm position-relative">
+
                 <i class="bi bi-cart3"></i> Carrito
                 {% if request.session.carrito %}
                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
@@ -123,7 +181,7 @@
 
 <!-- Productos: 5 por fila SIEMPRE -->
 <div class="container-fluid px-3">
-  <div class="row g-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5">
+  <div class="row g-3 row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5">
     {% for producto in productos_pagina %}
       <div class="col">
         <div class="card h-100 shadow-sm">
@@ -181,7 +239,10 @@
 
             <a href="{% url 'opiniones:agregar_opinion' producto.id %}" class="btn btn-secondary btn-sm">Consulta</a>
             {% if producto.stock > 0 %}
-              <a href="{% url 'CarritoApp:Add' producto.id %}" class="btn btn-primary btn-sm">Comprar</a>
+              <a href="{% url 'CarritoApp:Add' producto.id %}?next={{ request.get_full_path|urlencode }}"
+                class="btn btn-primary btn-sm">
+                Comprar
+              </a>
             {% else %}
               <button class="btn btn-outline-danger btn-sm" disabled>Sin stock</button>
             {% endif %}
@@ -192,6 +253,9 @@
     {% endfor %}
   </div>
 </div>
+
+
+
 
 <!-- Navegación de Páginas -->
     <nav aria-label="Page navigation">

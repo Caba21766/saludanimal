@@ -7,72 +7,242 @@
 
 {% block contenido %}
 <style>
-    /* Aplica a toda la tabla */
-    .tabla-usuarios td, 
-    .tabla-usuarios th {
-        font-size: 12px;  /* ajustá a 11px o 10px si todavía no entra */
-        white-space: nowrap; /* evita que corte en dos líneas */
-    }
+  .card-soft{
+    border: 1px solid rgba(0,0,0,.08);
+    border-radius: 14px;
+    box-shadow: 0 10px 25px rgba(0,0,0,.05);
+    overflow: hidden;
+    background: #fff;
+  }
 
-    /* Opcional: achicar el padding para que ocupe menos espacio */
-    .tabla-usuarios td, 
-    .tabla-usuarios th {
-        padding: 4px 6px;
-    }
+  .card-soft-header{
+    padding: 16px 18px;
+    border-bottom: 1px solid rgba(0,0,0,.06);
+    background: linear-gradient(180deg, #0b2c4e 0%, #0b2c4e 60%, #0a2745 100%);
+    color: #fff;
+  }
+
+  .title-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .title-row h2{
+    margin:0;
+    font-weight:800;
+    letter-spacing:.2px;
+    font-size:1.25rem;
+  }
+  .badge-count{
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.25);
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .card-soft-toolbar{
+    padding: 12px 18px;
+    border-bottom: 1px solid rgba(0,0,0,.06);
+    background: #f8fafc;
+  }
+
+  .search-input{
+    max-width: 420px;
+    border-radius: 10px;
+    border: 1px solid rgba(15, 23, 42, .12);
+    padding: 10px 12px;
+    font-size: 14px;
+    outline: none;
+    width: 100%;
+  }
+  .search-input:focus{
+    border-color: rgba(13,110,253,.45);
+    box-shadow: 0 0 0 3px rgba(13,110,253,.12);
+  }
+
+  /* ✅ Scroll */
+  .table-wrap{
+    max-height: 70vh;
+    overflow: auto;
+  }
+
+  /* ✅ Ajuste automático por contenido */
+  .tabla-usuarios{
+    margin: 0;
+    width: 100%;
+    table-layout: auto; /* ✅ clave */
+  }
+
+  .tabla-usuarios th,
+  .tabla-usuarios td{
+    font-size: 12px;
+    padding: 8px 10px;      /* más compacto */
+    vertical-align: middle;
+    border-color: rgba(0,0,0,.06) !important;
+  }
+
+  /* Header sticky */
+  .tabla-usuarios thead th{
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #111827 !important;
+  }
+
+  /* ✅ sin altura fija (ajusta a contenido) */
+  .tabla-usuarios tbody tr{
+    transition: background .15s ease;
+  }
+  .tabla-usuarios tbody tr:hover{
+    background: rgba(13,110,253,.05);
+  }
+
+  /* ✅ Columnas cortas que NO cortan */
+  .nowrap{
+    white-space: nowrap;
+  }
+
+  /* ✅ Columnas largas: permitir 2 líneas y cortar */
+  .wrap2{
+    display: -webkit-box;
+    -webkit-line-clamp: 2;     /* máximo 2 líneas */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.2;
+  }
+
+  /* Avatar */
+  .user-thumb{
+    width: 36px;
+    height: 36px;
+    object-fit: cover;
+    border-radius: 999px;
+    border: 2px solid rgba(15, 23, 42, .08);
+    background: #fff;
+  }
+
+  /* Botón */
+  .btn-action{
+    border-radius: 10px;
+    padding: 6px 10px;
+    font-weight: 700;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .empty-row{
+    padding: 18px !important;
+    background: #fff;
+    color: #64748b;
+  }
 </style>
 
-<div class="container mt-4">
-    <h2 class="text-center mb-4">Lista de Usuarios</h2>
+<div class="container my-4">
+  <div class="card-soft">
 
-    <div class="table-responsive">
-        <table class="table table-striped table-bordered text-center tabla-usuarios">
-            <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>Usuario</th>
-                    <th>Nombre</th>
-                    <th>Apellido</th>
-                    <th>Email</th>
-                    <th>DNI</th>
-                    <th>Domicilio</th>
-                    <th>Teléfono 1</th>
-                    <th>Teléfono 2</th>
-                    <th>CUIL</th>
-                    <th>IVA</th>
-                    <th>Imagen</th>
-                    <th>Fecha de Registro</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for usuario in usuarios %}
-                    <tr>
-                        <td>{{ usuario.id }}</td>
-                        <td>{{ usuario.username }}</td>
-                        <td>{{ usuario.first_name }}</td>
-                        <td>{{ usuario.last_name }}</td>
-                        <td>{{ usuario.email }}</td>
-                        <td>{{ usuario.dni_usuario }}</td>
-                        <td>{{ usuario.domicilio_usuario }}</td>
-                        <td>{{ usuario.tel1_usuario }}</td>
-                        <td>{{ usuario.tel2_usuario }}</td>
-                        <td>{{ usuario.cuil }}</td>
-                        <td>{{ usuario.iva }}</td>
-                        <td>
-                            {% if usuario.imagen_usuario %}
-                                <img src="{{ usuario.imagen_usuario.url }}" alt="Imagen de {{ usuario.username }}" class="img-thumbnail" width="50">
-                            {% else %}
-                                <span class="text-muted">Sin imagen</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ usuario.date_joined|date:"d/m/Y H:i" }}</td>
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="13" class="text-center text-muted">No hay usuarios registrados.</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="card-soft-header">
+      <div class="title-row">
+        <h2>Lista de Usuarios</h2>
+        <span class="badge-count">Total: {{ usuarios|length }}</span>
+      </div>
+      <div style="margin-top:6px; font-size: 12px; opacity:.9;">
+        Gestión y edición de perfiles registrados
+      </div>
     </div>
+
+
+    <div class="table-wrap">
+      <table class="table table-striped table-hover tabla-usuarios">
+        <thead class="table-dark">
+          <tr>
+            <th class="nowrap text-center">ID</th>
+            <th class="nowrap">Usuario</th>
+            <th class="nowrap">Nombre</th>
+            <th class="nowrap">Apellido</th>
+            <th>Email</th>
+            <th class="nowrap">DNI</th>
+            <th>Domicilio</th>
+            <th class="nowrap">Teléfono 1</th>
+            <th class="nowrap">Teléfono 2</th>
+            <th class="nowrap">CUIL</th>
+            <th class="nowrap text-center">IVA</th>
+            <th class="nowrap text-center">Imagen</th>
+            <th class="nowrap text-center">Acción</th>
+          </tr>
+        </thead>
+
+        <tbody id="usersTbody">
+          {% for usuario in usuarios %}
+            <tr class="user-row">
+              <td class="nowrap text-center">{{ usuario.id }}</td>
+
+              <td class="nowrap"><strong>{{ usuario.username }}</strong></td>
+              <td class="nowrap">{{ usuario.first_name }}</td>
+              <td class="nowrap">{{ usuario.last_name }}</td>
+
+              <!-- ✅ 2 líneas máximo -->
+              <td title="{{ usuario.email }}"><div class="wrap2">{{ usuario.email }}</div></td>
+
+              <td class="nowrap">{{ usuario.dni_usuario }}</td>
+
+              <!-- ✅ 2 líneas máximo -->
+              <td title="{{ usuario.domicilio_usuario }}"><div class="wrap2">{{ usuario.domicilio_usuario }}</div></td>
+
+              <td class="nowrap">{{ usuario.tel1_usuario }}</td>
+              <td class="nowrap">{{ usuario.tel2_usuario }}</td>
+              <td class="nowrap">{{ usuario.cuil }}</td>
+
+              <td class="nowrap text-center">{{ usuario.iva }}</td>
+
+              <td class="text-center">
+                {% if usuario.imagen_usuario %}
+                  <img src="{{ usuario.imagen_usuario.url }}"
+                       alt="Imagen de {{ usuario.username }}"
+                       class="user-thumb">
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+             
+              <td class="text-center">
+                <a href="{% url 'apps.blog_auth:edit_usuario_admin' usuario.id %}"
+                  class="btn btn-sm btn-warning btn-action"
+                  title="Modificar">
+                  ✏️
+                </a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="14" class="text-center empty-row">No hay usuarios registrados.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
 </div>
+
+<script>
+  (function () {
+    const input = document.getElementById("userSearch");
+    const rows = document.querySelectorAll(".user-row");
+    if (!input) return;
+
+    input.addEventListener("input", function () {
+      const q = (this.value || "").toLowerCase().trim();
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(q) ? "" : "none";
+      });
+    });
+  })();
+</script>
 {% endblock %}

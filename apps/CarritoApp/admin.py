@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import Factura, Producto, Compra, Provedor, Venta, Categ_producto, CuentaCorriente
 # Registro de modelos con admin.site.register
-admin.site.register(Compra)
+
 admin.site.register(Venta)
 admin.site.register(Provedor)
 from django.contrib import admin
@@ -149,3 +149,64 @@ class MensajeClienteAdmin(admin.ModelAdmin):
     list_display = ("id", "apellido", "nombre", "pedido", "creado_en", "respondido", "activo")
     list_filter = ("respondido", "activo", "creado_en")
     search_fields = ("apellido", "nombre", "pedido", "email_contacto")
+
+# -------------------------------------------------
+from .models import ChatEstado
+
+@admin.register(ChatEstado)
+class ChatEstadoAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "cliente_id",
+        "nombre_cliente",
+        "cleaned_sender_pn",
+        "paso",
+        "esperando_opcion",
+        "precio_total",
+        "creado_en",
+    )
+
+    list_filter = ("esperando_opcion", "paso", "creado_en")
+
+    search_fields = (
+        "cliente_id",
+        "nombre_cliente",
+        "cleaned_sender_pn",
+        "ultimo_texto",
+    )
+
+    readonly_fields = ("creado_en", "actualizado_en")
+
+# ----------Compra---------------------------------------
+from django.contrib import admin
+from .models import Compra
+from django.contrib import admin
+from .models import Compra
+
+
+@admin.register(Compra)
+class CompraAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'producto',
+        'cantidad',
+        'precio_compra',
+        'factura_compra',
+        'fecha_compra',
+        'provedor',
+    )
+
+    list_filter = (
+        'fecha_compra',
+        'provedor',
+        'producto',
+    )
+
+    search_fields = (
+        'factura_compra',
+        'producto__nombre_producto',
+        'provedor__nombre',
+    )
+
+    ordering = ('-fecha_compra',)
+    list_per_page = 25

@@ -46,7 +46,7 @@
 
 <div class="card shadow-sm mb-4" style="background-color:#727f8b;">
   <div class="card-header bg-white border-0">
-    <h5 class="m-0 text-primary fw-bold">Lista de Cierre de Caja</h5>
+    <h5 class="m-0 text-primary fw-bold">Caja Diaria</h5>
   </div>
   <div class="card-body">
     <!-- tu formulario -->
@@ -221,6 +221,17 @@
                     <i class="bi bi-eye"></i>
                   </button>
                 {% endif %}
+
+                <form method="post"
+                      action="{% url 'CarritoApp:eliminar_factura_caja' m.id %}"
+                      class="d-inline"
+                      onsubmit="return confirm('¿Eliminar esta FACTURA? Esta acción no se puede deshacer.');">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                  <button type="submit" class="btn btn-secondary btn-sm" title="Eliminar factura">❌</button>
+                </form>
+
+
               </div>
             </td>
           </tr>
@@ -274,6 +285,16 @@
                   <i class="bi bi-eye"></i>
                 </button>
               {% endif %}
+
+              <form method="post"
+                    action="{% url 'CarritoApp:eliminar_pago_caja' m.id %}"
+                    class="d-inline"
+                    onsubmit="return confirm('¿Eliminar este PAGO? Esta acción no se puede deshacer.');">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <button type="submit" class="btn btn-secondary btn-sm" title="Eliminar factura">❌</button>
+              </form>
+              
             </td>
           </tr>
         {% endif %}
@@ -354,6 +375,7 @@
     </div>
   </div>
 </div>
+
 
 {% endblock %}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>

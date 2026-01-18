@@ -7,29 +7,30 @@
 
 {% block contenido %}
 <div class="container my-5">
-    <h1 class="text-center mb-4">Listado o Modificación de Stock</h1>
+    <h1 class="text-center mb-4">Stock en Deposito</h1>
     <div class="table-responsive">
         <table class="table table-striped table-bordered">
             <thead class="table-dark text-center">
                 <tr>
-                    <th>Nombre del Producto</th>
-                    <th>Stock Disponible</th>
-                    <th>Acción</th>
+                    <th>Producto</th>
+                    <th>Compras de Productos</th>
+                    <th>Productos Vendidos</th>
+                    <th>Stock en Deposito</th>
                 </tr>
             </thead>
-            <tbody>
-                {% for producto in productos %}
-                <tr>
-                    <td>{{ producto.nombre_producto }}</td>
-                    <td class="text-center">{{ producto.stock }}</td>
-                    <td class="text-center">
-                        <a href="{% url 'CarritoApp:modificar_stock' producto.id %}" class="btn btn-primary btn-sm">
-                            Modificar
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
+           <tbody>
+            {% for producto in productos %}
+            <tr>
+                <td>{{ producto.nombre_producto }}</td>
+                <td class="text-center">{{ producto.stock_total }}</td>
+                <td class="text-center fw-bold">{{ producto.cantidad_vendida }}</td>
+                <td class="text-center fw-bold text-success">
+                    {{ producto.stock_deposito }}
+                </td>
+            </tr>
+            {% endfor %}
+           </tbody>
+
         </table>
     </div>
     <div class="text-center mt-4">

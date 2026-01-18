@@ -463,7 +463,6 @@ def sumar_producto(request, producto_id):
 
 
 #---------------Limpiar Carrito----------------------------- --
-
 def limpiar_carrito(request):
     request.session['carrito'] = {}
     return redirect('CarritoApp:ver_carrito')
@@ -501,7 +500,8 @@ def tienda(request):
         productos = Producto.objects.all()  # Muestra todos los productos si no se selecciona categoría
 
     # Paginación
-    paginator = Paginator(productos, 5)  # Muestra 3 productos por página
+    
+    paginator = Paginator(productos, 10)  # Muestra 3 productos por página
     page_number = request.GET.get('page')  # Obtiene el número de página desde el parámetro GET
     productos_pagina = paginator.get_page(page_number)  # Obtiene los productos de la página actual
 
@@ -540,6 +540,8 @@ def tienda(request):
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 from .models import Producto
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.urls import reverse
 
 def agregar_al_carrito(request, producto_id):
 
@@ -565,15 +567,20 @@ def agregar_al_carrito(request, producto_id):
         carrito[str(producto_id)]['acumulado'] += float(producto.precio)
 
     request.session['carrito'] = carrito
-    return redirect('CarritoApp:tienda')  # Redirige a la tienda o donde prefieras
+    next_url = request.GET.get("next") or request.META.get("HTTP_REFERER")
+    if not next_url or not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        next_url = reverse("CarritoApp:tienda")
+    return redirect(next_url)
 
 
-#----------------- CARRITO por falta de mercaderia ------------------------------------
+
+#----------------- CARRITO por falta de mercaderia ---------------------------
 from django.shortcuts import render
 
 def carrito(request):
     carrito = request.session.get('carrito', {})
     return render(request, 'CarritoApp/carrito.html', {'carrito': carrito})
+
 
 #---------------------pago_fallido------------------
 from django.shortcuts import render
@@ -1643,13 +1650,68 @@ def modificar_stock(request, pk):
             return render(request, 'CarritoApp/modificar_stock.html', {'producto': producto, 'error': error})
     return render(request, 'CarritoApp/modificar_stock.html', {'producto': producto})
 
-#--------------Moificacion Stock---------------------------------------#
+#--------------Stock en deposito---------------------------------------#
+
 from django.shortcuts import render
-from .models import Producto
+from django.db.models import Sum
+from django.db.models.functions import Coalesce
+from .models import Compra, Factura
+import json
+from collections import defaultdict
 
 def modificacion_stock(request):
-    productos = Producto.objects.all()
-    return render(request, 'CarritoApp/modificacion_stock.html', {'productos': productos})
+
+    # 1️⃣ STOCK COMPRADO (desde Compra)
+    stock_qs = (
+        Compra.objects
+        .values('producto__nombre_producto')
+        .annotate(stock_total=Coalesce(Sum('cantidad'), 0))
+    )
+
+    stock_dict = {
+        item['producto__nombre_producto']: item['stock_total']
+        for item in stock_qs
+    }
+
+    # 2️⃣ PRODUCTOS VENDIDOS (MISMA LÓGICA QUE YA USÁS)
+    vendidos_dict = defaultdict(int)
+
+    facturas = Factura.objects.all()
+
+    for factura in facturas:
+        try:
+            detalle = factura.detalle_productos
+            if isinstance(detalle, str):
+                detalle = json.loads(detalle)
+
+            for prod in detalle:
+                nombre = prod.get('nombre_producto')
+                cantidad = prod.get('cantidad_vendida', 0)
+                vendidos_dict[nombre] += cantidad
+
+        except Exception:
+            continue
+
+    # 3️⃣ ARMAMOS LA TABLA FINAL
+    productos = []
+
+    for nombre, stock in stock_dict.items():
+        cantidad_vendida = vendidos_dict.get(nombre, 0)  # ✅ definir variable
+        productos.append({
+            'nombre_producto': nombre,
+            'stock_total': stock,
+            'cantidad_vendida': vendidos_dict.get(nombre, 0),
+            'stock_deposito': stock - cantidad_vendida,  # ✅ ahora sí
+        })
+
+    return render(
+        request,
+        'CarritoApp/modificacion_stock.html',
+        {'productos': productos}
+    )
+
+
+
 
 
 #--------------movimiento_cliente---------------------------------------#
@@ -1672,67 +1734,141 @@ def movimiento_cliente(request):
 
 
 
-#-------------------productos_vendidos------------------------------------#
+# ------------------- productos_vendidos ------------------- #
+
+# ------------------- productos_vendidos ------------------- #
 from django.shortcuts import render
 from .models import Factura
 import json
+from collections import defaultdict
+from decimal import Decimal, InvalidOperation
+from datetime import datetime, time
+
 
 def productos_vendidos(request):
     productos_vendidos = []
-    total_cantidad_vendida = 0
-    total_precio_unitario = 0
-    total_precio = 0
 
     # Filtros
-    nombre_producto = request.GET.get('nombre_producto', '')
-    fecha_desde = request.GET.get('fecha_desde', None)
-    fecha_hasta = request.GET.get('fecha_hasta', None)
+    nombre_producto = (request.GET.get('nombre_producto') or '').strip()
+    fecha_desde_str = (request.GET.get('fecha_desde') or '').strip()
+    fecha_hasta_str = (request.GET.get('fecha_hasta') or '').strip()
 
-    facturas = Factura.objects.all()
+    facturas = Factura.objects.all().order_by('-fecha')
 
-    # Aplicar filtros
-    if fecha_desde:
-        facturas = facturas.filter(fecha__gte=fecha_desde)
-    if fecha_hasta:
-        facturas = facturas.filter(fecha__lte=fecha_hasta)
+    # --- Parse fechas (YYYY-MM-DD) ---
+    fecha_desde = None
+    fecha_hasta = None
+    try:
+        if fecha_desde_str:
+            fecha_desde = datetime.strptime(fecha_desde_str, "%Y-%m-%d").date()
+    except ValueError:
+        fecha_desde = None
+
+    try:
+        if fecha_hasta_str:
+            fecha_hasta = datetime.strptime(fecha_hasta_str, "%Y-%m-%d").date()
+    except ValueError:
+        fecha_hasta = None
+
+    # ✅ Filtro por fecha robusto (DateField o DateTimeField)
+    campo_fecha = Factura._meta.get_field("fecha")
+    internal = campo_fecha.get_internal_type()  # "DateField" o "DateTimeField"
+
+    if internal == "DateTimeField":
+        if fecha_desde:
+            facturas = facturas.filter(fecha__gte=datetime.combine(fecha_desde, time.min))
+        if fecha_hasta:
+            facturas = facturas.filter(fecha__lte=datetime.combine(fecha_hasta, time.max))
+    else:
+        # DateField (o cualquier otro tipo date)
+        if fecha_desde:
+            facturas = facturas.filter(fecha__gte=fecha_desde)
+        if fecha_hasta:
+            facturas = facturas.filter(fecha__lte=fecha_hasta)
+
+    # Totales generales
+    total_cantidad_vendida = 0
+    total_precio_unitario = Decimal("0")
+    total_general = Decimal("0")  # suma de la tabla principal
+
+    # Inventario acumulado
+    inventario = defaultdict(lambda: {
+        'nombre_producto': '',
+        'cantidad_total': 0,
+        'total_vendido': Decimal("0"),
+    })
 
     for factura in facturas:
         try:
-            detalle_productos = json.loads(factura.detalle_productos)
-            for detalle in detalle_productos:
-                nombre = detalle.get('nombre_producto', '')
-                cantidad_vendida = detalle.get('cantidad_vendida', 0)
-                precio_unitario = detalle.get('precio_unitario', 0)
-
-                if nombre_producto.lower() in nombre.lower():
-                    total = cantidad_vendida * precio_unitario
-                    total_cantidad_vendida += cantidad_vendida
-                    total_precio_unitario += precio_unitario
-                    total_precio += total
-
-                    productos_vendidos.append({
-                        'fecha': factura.fecha,
-                        'nombre_producto': nombre,
-                        'cantidad_vendida': cantidad_vendida,
-                        'precio_unitario': precio_unitario,
-                        'total': total,
-                    })
+            detalle_productos = json.loads(factura.detalle_productos or "[]")
         except json.JSONDecodeError:
-            print(f"Error al decodificar JSON en la factura {factura.numero_factura}")
+            print(f"❌ Error al decodificar JSON en factura {factura.id}")
+            continue
 
+        for detalle in detalle_productos:
+            nombre = (detalle.get('nombre_producto') or '').strip()
+
+            # 🔍 filtro por nombre (si viene vacío, no filtra)
+            if nombre_producto and (nombre_producto.lower() not in nombre.lower()):
+                continue
+
+            # cantidad
+            try:
+                cantidad_vendida = int(detalle.get('cantidad_vendida', 0) or 0)
+            except (ValueError, TypeError):
+                cantidad_vendida = 0
+
+            # precio unitario (Decimal seguro)
+            try:
+                precio_unitario = Decimal(str(detalle.get('precio_unitario', 0) or 0))
+            except (InvalidOperation, ValueError, TypeError):
+                precio_unitario = Decimal("0")
+
+            total = Decimal(cantidad_vendida) * precio_unitario
+
+            productos_vendidos.append({
+                'fecha': factura.fecha,
+                'nombre_producto': nombre,
+                'cantidad_vendida': cantidad_vendida,
+                'precio_unitario': precio_unitario,
+                'total': total,
+            })
+
+            total_cantidad_vendida += cantidad_vendida
+            total_precio_unitario += precio_unitario
+            total_general += total
+
+            inventario[nombre]['nombre_producto'] = nombre
+            inventario[nombre]['cantidad_total'] += cantidad_vendida
+            inventario[nombre]['total_vendido'] += total
+
+    # Orden por fecha desc
     productos_vendidos.sort(key=lambda x: x['fecha'], reverse=True)
+
+    inventario_resumen = sorted(
+        inventario.values(),
+        key=lambda x: (x['nombre_producto'] or '').lower()
+    )
+
+    # ✅ suma de la columna item.total_vendido (tu tabla resumen)
+    inventario_total_general = sum(item['total_vendido'] for item in inventario_resumen)
 
     return render(request, 'CarritoApp/productos_vendidos.html', {
         'productos_vendidos': productos_vendidos,
+        'inventario_resumen': inventario_resumen,
+
         'filtro_nombre_producto': nombre_producto,
-        'fecha_desde': fecha_desde,
-        'fecha_hasta': fecha_hasta,
+        'fecha_desde': fecha_desde_str,
+        'fecha_hasta': fecha_hasta_str,
+
         'total_cantidad_vendida': total_cantidad_vendida,
         'total_precio_unitario': total_precio_unitario,
-        'total_precio': total_precio,
+        'total_general': total_general,
+
+        'inventario_total_general': inventario_total_general,
     })
 
-
+#-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 from django.http import JsonResponse
 from apps.CarritoApp.models import Producto  # Asegúrate de importar el modelo correcto
@@ -1888,78 +2024,336 @@ def imprimir_caja(request):
 # ------------------Totales factura para el CELULAR PDF------------------------------------------
 # ------------------Totales factura para el CELULAR PDF------------------------------------------
 # ------------------Totales factura para el CELULAR PDF------------------------------------------
-
 import os
 import json
-from reportlab.pdfgen import canvas
+from decimal import Decimal
+
 from django.conf import settings
 from django.shortcuts import render, get_object_or_404
+
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+
 from .models import Factura
+
+
+def _money(v):
+    """$35000,00 (dos decimales, coma)"""
+    if v is None:
+        v = 0
+    try:
+        v = Decimal(str(v))
+    except Exception:
+        v = Decimal("0")
+    s = f"{v:.2f}".replace(".", ",")
+    return f"${s}"
+
+
+def _wrap_text(pdf, text, max_width, font_name="Helvetica", font_size=10):
+    """
+    Divide el texto en varias líneas para que no supere max_width.
+    """
+    if text is None:
+        text = "-"
+    text = str(text).strip()
+    if not text:
+        return ["-"]
+
+    pdf.setFont(font_name, font_size)
+
+    words = text.split()
+    lines = []
+    current = ""
+
+    for w in words:
+        test = (current + " " + w).strip()
+        if pdf.stringWidth(test, font_name, font_size) <= max_width:
+            current = test
+        else:
+            if current:
+                lines.append(current)
+            current = w
+
+    if current:
+        lines.append(current)
+
+    # fallback: si es una sola palabra larguísima, cortamos “a lo bruto”
+    if len(lines) == 1 and pdf.stringWidth(lines[0], font_name, font_size) > max_width:
+        s = lines[0]
+        cut = ""
+        out = []
+        for ch in s:
+            test = cut + ch
+            if pdf.stringWidth(test, font_name, font_size) <= max_width:
+                cut = test
+            else:
+                out.append(cut)
+                cut = ch
+        if cut:
+            out.append(cut)
+        return out
+
+    return lines
+
 
 def vista_resumen_factura(request, factura_id):
     factura = get_object_or_404(Factura, id=factura_id)
 
-    # Crear carpeta si no existe
-    ruta_carpeta = os.path.join(settings.MEDIA_ROOT, 'facturas')
+    # Carpeta PDF
+    ruta_carpeta = os.path.join(settings.MEDIA_ROOT, "facturas")
     os.makedirs(ruta_carpeta, exist_ok=True)
 
-    # Nombre y ruta del archivo PDF
     nombre_pdf = f"factura_{factura.id}.pdf"
     ruta_pdf = os.path.join(ruta_carpeta, nombre_pdf)
 
-    # Intentar decodificar productos
+    # Productos desde JSON
     try:
-        productos = json.loads(factura.detalle_productos)
+        productos = json.loads(factura.detalle_productos or "[]")
     except json.JSONDecodeError:
         productos = []
 
-    # Generar PDF solo si no existe
-    if True:
-        pdf = canvas.Canvas(ruta_pdf)
-        y = 800
-        pdf.setFont("Helvetica-Bold", 14)
-        pdf.drawString(100, y, f"FACTURA N°: {factura.numero_factura}")
-        y -= 20
-        pdf.setFont("Helvetica", 12)
-        pdf.drawString(100, y, f"Fecha: {factura.fecha}")
-        y -= 20
-        pdf.drawString(100, y, f"Cliente: {factura.nombre_cliente} {factura.apellido_cliente}")
-        y -= 20
-        pdf.drawString(100, y, f"CUIL: {factura.cuil}")
-        y -= 20
-        pdf.drawString(100, y, f"Vendedor: {factura.vendedor}")
-        y -= 20
-        pdf.drawString(100, y, f"Método de Pago: {factura.metodo_pago}")
-        y -= 20
-        pdf.drawString(100, y,  f"Nº Ticket: {factura.numero_tiket or '-'}")
-        y -= 20
-        pdf.drawString(100, y,  f"Nº Tarjeta : {factura.tarjeta_numero or '-'}")
-        y -= 30
-        pdf.setFont("Helvetica-Bold", 12)
-        pdf.drawString(100, y, "Productos:")
-        y -= 20
-        pdf.setFont("Helvetica", 10)
+    # Método de pago (FK o manual)
+    metodo_pago = (
+        factura.metodo_pago.tarjeta_nombre
+        if getattr(factura, "metodo_pago", None)
+        else (factura.metodo_pago_manual or "Sin especificar")
+    )
 
-        for producto in productos:
-            pdf.drawString(110, y, f"{producto.get('nombre_producto')} x {producto.get('cantidad_vendida')} - ${producto.get('subtotal')}")
-            y -= 20
-            if y < 100:
-                pdf.showPage()
-                y = 800
+    # Campos numéricos (fallbacks)
+    total_producto = getattr(factura, "total", 0) or 0
+    descuento = getattr(factura, "descuento", 0) or 0
+    total_descuento = getattr(factura, "total_descuento", None)
+    if total_descuento is None:
+        total_descuento = total_producto
 
-        y -= 10
-        pdf.setFont("Helvetica-Bold", 12)
-        pdf.drawString(100, y, f"Total: ${factura.total}")
-        pdf.save()
+    interes = getattr(factura, "interes", 0) or 0
+    cuotas = getattr(factura, "cuotas", 0) or 0
+    cuota_mensual = getattr(factura, "cuota_mensual", 0) or 0
+    total_con_interes = getattr(factura, "total_con_interes", None)
+    if total_con_interes is None:
+        total_con_interes = total_producto
 
-    # URL pública para el PDF
-    pdf_url = f"http://146.190.66.18/media/facturas/{nombre_pdf}"
+    # ========= PDF =========
+    pdf = canvas.Canvas(ruta_pdf, pagesize=A4)
+    W, H = A4
 
-    return render(request, 'detalle_factura.html', {
-        'factura': factura,
-        'detalle_productos': productos,
-        'pdf_url': pdf_url,
+    # Márgenes y layout
+    left = 45
+    right = W - 45
+    top = H - 55
+    bottom = 60
+
+    # Colores
+    COLOR_VIOLETA = colors.HexColor("#8e44ad")
+    COLOR_AZUL = colors.HexColor("#0d6efd")
+    COLOR_VERDE = colors.HexColor("#2ecc71")
+    COLOR_ROJO = colors.HexColor("#e74c3c")
+    COLOR_GRIS = colors.HexColor("#444444")
+    COLOR_HEADER_TABLA = colors.HexColor("#1f2a33")
+
+    # ---------- Helpers ----------
+    def new_page():
+        pdf.showPage()
+        return draw_header()
+
+    def draw_header():
+        y = top
+
+        # Título derecha
+        pdf.setFont("Helvetica-Bold", 24)
+        pdf.setFillColor(COLOR_VIOLETA)
+        pdf.drawRightString(right, y, f"Factura  N° {str(factura.numero_factura).zfill(5)}")
+
+        # línea
+        y -= 18
+        pdf.setStrokeColor(colors.HexColor("#cbd5e1"))
+        pdf.setLineWidth(1)
+        pdf.line(left, y, right, y)
+
+        # Datos en 2 columnas (con ancho controlado)
+        y -= 28
+
+        gap = 28
+        total_w = (right - left)
+        col_w = (total_w - gap) / 2
+        col1_x = left
+        col2_x = left + col_w + gap
+
+        label_w = 90  # ancho reservado para etiqueta
+        value_w = col_w - label_w  # ancho para valor
+
+        def draw_kv_wrapped(x, y, label, value, label_color=colors.black, value_color=colors.black):
+            # etiqueta
+            pdf.setFont("Helvetica-Bold", 10)
+            pdf.setFillColor(label_color)
+            pdf.drawString(x, y, f"{label}:")
+
+            # valor (wrap)
+            lines = _wrap_text(pdf, value, max_width=value_w, font_name="Helvetica", font_size=10)
+            pdf.setFont("Helvetica", 10)
+            pdf.setFillColor(value_color)
+
+            yy = y
+            for i, line in enumerate(lines):
+                pdf.drawString(x + label_w, yy, line)
+                if i < len(lines) - 1:
+                    yy -= 12
+            return y - (12 * (len(lines) - 1))  # devuelve la y real usada
+
+        # Columna izq
+        y_a = draw_kv_wrapped(col1_x, y, "Fecha", getattr(factura, "fecha", "-"), label_color=COLOR_AZUL)
+        y_b = draw_kv_wrapped(col1_x, y - 16, "Cliente", f"{factura.nombre_cliente} {factura.apellido_cliente}".strip())
+        y_c = draw_kv_wrapped(col1_x, y - 32, "Cuil N°", factura.cuil or "-", label_color=COLOR_GRIS)
+
+        # Columna der
+        y_d = draw_kv_wrapped(col2_x, y, "Método de Pago", metodo_pago)
+        y_e = draw_kv_wrapped(col2_x, y - 16, "N° Tarjeta", factura.tarjeta_numero or "-", label_color=COLOR_AZUL, value_color=COLOR_AZUL)
+        y_f = draw_kv_wrapped(col2_x, y - 32, "N° Ticket", factura.numero_tiket or "-", label_color=COLOR_VERDE, value_color=COLOR_VERDE)
+        y_g = draw_kv_wrapped(col2_x, y - 48, "Vendedor", factura.vendedor or "-", label_color=COLOR_ROJO, value_color=COLOR_ROJO)
+
+        # Bajada: elegimos el mínimo y usado (porque hubo wrap)
+        y_min = min(y_a, y_b, y_c, y_d, y_e, y_f, y_g)
+        y_next = y_min - 30
+        return y_next
+
+    def draw_table_header(y):
+        # columnas que ENTRAN en la hoja (sum = right-left)
+        table_w = right - left
+        col_widths = [75, 210, 60, 80, 80]  # total 505 aprox
+        if sum(col_widths) != int(table_w):
+            # Ajuste automático si cambia el margen
+            diff = int(table_w) - sum(col_widths)
+            col_widths[1] += diff  # se lo damos a "Nombre"
+
+        x = [left]
+        for w_ in col_widths[:-1]:
+            x.append(x[-1] + w_)
+
+        pdf.setFillColor(COLOR_HEADER_TABLA)
+        pdf.rect(left, y - 18, table_w, 22, fill=1, stroke=0)
+
+        pdf.setFillColor(colors.white)
+        pdf.setFont("Helvetica-Bold", 10)
+
+        pdf.drawString(x[0] + 8, y - 12, "N° Producto")
+        pdf.drawString(x[1] + 8, y - 12, "Nombre Producto")
+        pdf.drawString(x[2] + 8, y - 12, "Cantidad")
+        pdf.drawString(x[3] + 8, y - 12, "Precio Unitario")
+        pdf.drawString(x[4] + 8, y - 12, "Subtotal")
+
+        pdf.setStrokeColor(colors.HexColor("#e5e7eb"))
+        pdf.line(left, y - 18, right, y - 18)
+
+        return x, col_widths
+
+    # ---------- Empezar ----------
+    y = draw_header()
+
+    # ---------- Tabla ----------
+    if y < bottom + 220:
+        y = new_page()
+
+    x_cols, col_w = draw_table_header(y)
+    y -= 32
+
+    pdf.setFont("Helvetica", 10)
+    pdf.setFillColor(colors.black)
+    pdf.setStrokeColor(colors.HexColor("#e5e7eb"))
+
+    row_h = 20
+
+    for idx, p in enumerate(productos, start=1):
+        # si falta espacio, nueva página + header + table header
+        if y < bottom + 140:
+            y = new_page()
+            x_cols, col_w = draw_table_header(y)
+            y -= 32
+            pdf.setFont("Helvetica", 10)
+            pdf.setFillColor(colors.black)
+
+        # alternar fondo
+        if idx % 2 == 0:
+            pdf.setFillColor(colors.HexColor("#f5f6f7"))
+            pdf.rect(left, y - 14, right - left, row_h, fill=1, stroke=0)
+            pdf.setFillColor(colors.black)
+
+        numero_prod = p.get("numero_producto") or p.get("id") or ""
+        nombre = p.get("nombre_producto", "")
+        cant = p.get("cantidad_vendida", 0)
+        precio = p.get("precio_unitario", 0)
+        subtotal = p.get("subtotal", 0)
+
+        # celdas
+        pdf.drawString(x_cols[0] + 8, y, str(numero_prod))
+        # nombre con wrap “controlado” dentro de la celda
+        nombre_lines = _wrap_text(pdf, nombre, max_width=col_w[1] - 16, font_name="Helvetica", font_size=10)
+        pdf.drawString(x_cols[1] + 8, y, nombre_lines[0][:60])  # 1 línea (similar a tu HTML)
+        pdf.drawString(x_cols[2] + 8, y, str(cant))
+        pdf.drawString(x_cols[3] + 8, y, _money(precio))
+        pdf.drawString(x_cols[4] + 8, y, _money(subtotal))
+
+        pdf.line(left, y - 6, right, y - 6)
+        y -= row_h
+
+    # ---------- Resumen (derecha) ----------
+    y -= 10
+    if y < bottom + 140:
+        y = new_page()
+
+    resumen_right = right
+    label_right = right - 160  # donde termina el label
+    block_left = right - 240   # inicio visual del bloque
+
+    pdf.setFont("Helvetica-Bold", 11)
+    pdf.setFillColor(colors.black)
+
+    def draw_res(label, value, value_color=colors.black):
+        nonlocal y
+        pdf.setFillColor(colors.black)
+        pdf.drawRightString(label_right, y, label)
+        pdf.setFillColor(value_color)
+        pdf.drawRightString(resumen_right, y, value)
+        y -= 16
+
+    draw_res("Total Producto:", _money(total_producto), value_color=COLOR_VERDE)
+    draw_res("Desc %:", _money(descuento), value_color=colors.black)
+    draw_res("Importe c/Descuento:", _money(total_descuento), value_color=COLOR_AZUL)
+
+    y -= 6
+    pdf.setStrokeColor(colors.HexColor("#cbd5e1"))
+    pdf.line(block_left, y, resumen_right, y)
+    y -= 18
+
+    draw_res("Interés %:", str(interes), value_color=colors.black)
+    draw_res("Cuota N°:", str(cuotas), value_color=colors.black)
+    draw_res("Cuota Neta:", _money(cuota_mensual), value_color=COLOR_AZUL)
+
+    y -= 6
+    pdf.setStrokeColor(colors.HexColor("#cbd5e1"))
+    pdf.line(block_left, y, resumen_right, y)
+    y -= 26
+
+    # Total neto grande (no se sale)
+    pdf.setFont("Helvetica-Bold", 18)
+    pdf.setFillColor(colors.black)
+    pdf.drawRightString(label_right, y, "Total Neto a Pagar:")
+    pdf.setFillColor(COLOR_ROJO)
+    pdf.drawRightString(resumen_right, y, _money(total_con_interes))
+
+    pdf.save()
+
+    pdf_url = request.build_absolute_uri(f"{settings.MEDIA_URL}facturas/{nombre_pdf}")
+
+    return render(request, "detalle_factura.html", {
+        "factura": factura,
+        "detalle_productos": productos,
+        "pdf_url": pdf_url,
     })
+
+
+
+
 
 
 #-------------------------------------------------------------------------------
@@ -2452,7 +2846,6 @@ def mp_checkout(request):
         })
 
 #---------- Pago exitoso ---------------------------------
-
 import requests
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont  # pip install Pillow (ya lo usa Django para ImageField)
@@ -2721,3 +3114,36 @@ def mis_mensajes(request):
         "CarritoApp/mis_mensajes.html",
         {"mensajes": mensajes, "q": q, "solo_respondidos": solo_respondidos},
     )
+
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
+
+from apps.CarritoApp.models import Factura, CuentaCorriente  # <-- CuentaCorriente: el modelo de pagos
+
+@login_required
+@require_POST
+def eliminar_factura_caja(request, factura_id):
+    if not request.user.is_staff:
+        messages.error(request, "No tenés permisos para eliminar facturas.")
+        return redirect(request.POST.get("next") or "CarritoApp:listar_facturas")
+
+    factura = get_object_or_404(Factura, id=factura_id)
+    factura.delete()
+
+    messages.success(request, "Factura eliminada correctamente.")
+    return redirect(request.POST.get("next") or "CarritoApp:listar_facturas")
+
+@login_required
+@require_POST
+def eliminar_pago_caja(request, pago_id):
+    if not request.user.is_staff:
+        messages.error(request, "No tenés permisos para eliminar pagos.")
+        return redirect(request.POST.get("next") or "CarritoApp:listar_facturas")
+
+    pago = get_object_or_404(CuentaCorriente, id=pago_id)
+    pago.delete()
+
+    messages.success(request, "Pago eliminado correctamente.")
+    return redirect(request.POST.get("next") or "CarritoApp:listar_facturas")
