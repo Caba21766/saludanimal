@@ -1,29 +1,28 @@
 {% extends 'base.html' %}
 {% load static %}
-
 {% block navegacion %}
 {% include 'navegacion.html' %}
 {% endblock %}
-
 {% block contenido %}
-<div class="container-fluid vh-100 d-flex align-items-center justify-content-center bg-light">
+
+
+<div class="container-fluid bg-light d-flex justify-content-center" style="padding-top: 90px;">
     <div class="card shadow-lg border-0 rounded" style="max-width: 500px; width: 100%;">
 
-       <!-- Imagen Principal -->
-<div class="p-0 overflow-hidden rounded-top" style="background-color: #f8f9fa;">
-    {% if producto.imagen %}
-        <img src="{{ producto.imagen.url }}" 
-             class="card-img-top img-fluid" 
-             alt="{{ producto.nombre }}" 
-             style="height: 250px; width: 100%; object-fit: contain; background-color: #f8f9fa;">
-    {% else %}
-        <img src="{% static 'img/default-image.jpg' %}" 
-             class="card-img-top img-fluid" 
-             alt="Sin Imagen" 
-             style="height: 250px; width: 100%; object-fit: contain; background-color: #f8f9fa;">
-    {% endif %}
-</div>
-
+        <!-- Imagen Principal -->
+        <div class="p-0 overflow-hidden rounded-top" style="background-color: #f8f9fa;">
+            {% if producto.imagen %}
+                <img src="{{ producto.imagen.url }}"
+                     class="card-img-top img-fluid"
+                     alt="{{ producto.nombre }}"
+                     style="height: 250px; width: 100%; object-fit: contain; background-color: #f8f9fa;">
+            {% else %}
+                <img src="{% static 'img/default-image.jpg' %}"
+                     class="card-img-top img-fluid"
+                     alt="Sin Imagen"
+                     style="height: 250px; width: 100%; object-fit: contain; background-color: #f8f9fa;">
+            {% endif %}
+        </div>
 
         <!-- Contenido de la Tarjeta -->
         <div class="card-body p-4">
@@ -39,45 +38,46 @@
         <div class="card-body">
             <h6 class="text-center text-secondary mb-3">Imágenes Adicionales</h6>
             <div class="row row-cols-2 g-2 justify-content-center">
-                <!-- Imagen 1 -->
                 <div class="col d-flex justify-content-center">
                     {% if producto.imagen2 %}
-                        <img src="{{ producto.imagen2.url }}" class="img-thumbnail" alt="Imagen adicional 1" style="height: 150px; width: 100%; object-fit: cover;">
+                        <img src="{{ producto.imagen2.url }}" class="img-thumbnail" style="height: 150px; width: 100%; object-fit: cover;">
                     {% else %}
-                        <img src="{% static 'img/reydelpollo3.png' %}" class="img-thumbnail" alt="Sin Imagen" style="height: 150px; width: 100%; object-fit: cover;">
+                        <img src="{% static 'img/reydelpollo3.png' %}" class="img-thumbnail" style="height: 150px; width: 100%; object-fit: cover;">
                     {% endif %}
                 </div>
-                <!-- Imagen 2 -->
+
                 <div class="col d-flex justify-content-center">
                     {% if producto.imagen3 %}
-                        <img src="{{ producto.imagen3.url }}" class="img-thumbnail" alt="Imagen adicional 2" style="height: 150px; width: 100%; object-fit: cover;">
+                        <img src="{{ producto.imagen3.url }}" class="img-thumbnail" style="height: 150px; width: 100%; object-fit: cover;">
                     {% else %}
-                        <img src="{% static 'img/reydelpollo3.png' %}" class="img-thumbnail" alt="Sin Imagen" style="height: 150px; width: 100%; object-fit: cover;">
+                        <img src="{% static 'img/reydelpollo3.png' %}" class="img-thumbnail" style="height: 150px; width: 100%; object-fit: cover;">
                     {% endif %}
                 </div>
-                <!-- Imagen 3 -->
+
                 <div class="col d-flex justify-content-center">
                     {% if producto.imagen4 %}
-                        <img src="{{ producto.imagen4.url }}" class="img-thumbnail" alt="Imagen adicional 3" style="height: 150px; width: 100%; object-fit: cover;">
+                        <img src="{{ producto.imagen4.url }}" class="img-thumbnail" style="height: 150px; width: 100%; object-fit: cover;">
                     {% else %}
-                        <img src="{% static 'img/reydelpollo3.png' %}" class="img-thumbnail" alt="Sin Imagen" style="height: 150px; width: 100%; object-fit: cover;">
+                        <img src="{% static 'img/reydelpollo3.png' %}" class="img-thumbnail" style="height: 150px; width: 100%; object-fit: cover;">
                     {% endif %}
                 </div>
-                <!-- Imagen 4 -->
+
                 <div class="col d-flex justify-content-center">
                     {% if producto.imagen5 %}
-                        <img src="{{ producto.imagen5.url }}" class="img-thumbnail" alt="Imagen adicional 4" style="height: 150px; width: 100%; object-fit: cover;">
+                        <img src="{{ producto.imagen5.url }}" class="img-thumbnail" style="height: 150px; width: 100%; object-fit: cover;">
                     {% else %}
-                        <img src="{% static 'img/reydelpollo3.png' %}" class="img-thumbnail" alt="Sin Imagen" style="height: 150px; width: 100%; object-fit: cover;">
+                        <img src="{% static 'img/reydelpollo3.png' %}" class="img-thumbnail" style="height: 150px; width: 100%; object-fit: cover;">
                     {% endif %}
                 </div>
             </div>
         </div>
+
     </div>
 </div>
+
+
 <!-- Tarjeta del Formulario -->
 <div class="container my-5">
-    <!-- Tarjeta del Formulario -->
     <div class="card shadow-lg border-0 rounded">
         <div class="card-header bg-primary text-white text-center">
             <h5 class="fw-bold mb-0">Realizar Consulta</h5>

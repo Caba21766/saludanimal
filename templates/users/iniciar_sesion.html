@@ -16,7 +16,12 @@
     button:hover {
         transform: translateY(-3px); /* efecto de levantar el botón */
     }
+    .texto-presupuesto{
+        color: red;
+        font-weight: 700;
+    }
 </style>
+
 
 <form method="post" autocomplete="off">
     <input type="text" name="ninjauser" style="display:none">
@@ -33,16 +38,17 @@
                         <!-- Botones de redes sociales -->
                         <div class="col-lg-12 text-center mb-3">
 
-                            <a href="https://www.google.com/search?q=Instituto+de+Ense%C3%B1anza+en+Inform%C3%A1tica&oq=inst&gs_lcrp=EgZjaHJvbWUqCAgAEEUYJxg7MggIABBFGCcYOzIGCAEQRRg5MgwIAhAjGCcYgAQYigUyDQgDEAAYgwEYsQMYgAQyDQgEEAAYgwEYsQMYgAQyDQgFEAAYgwEYsQMYgAQyDQgGEC4YsQMYyQMYgAQyBwgHEAAYgAQyDQgIEC4YrwEYxwEYgATSAQoxOTY4NGowajE1qAIAsAIA&sourceid=chrome&ie=UTF-8" 
+                            <a href="https://www.reydelpollo.com.ar/invitado/" 
                             class="btn btn-outline-secondary w-100 mb-2"
                             style="display: flex; align-items: center; justify-content: center; border: 1px solid #ddd; padding: 10px; text-decoration: none;"
                             target="_blank">
-                                <img src="{% static 'img/google.jpeg' %}" alt="Google" style="width: 20px; height: 20px; margin-right: 10px; border-radius: 50%;">
-                                Conéctate con Google
+                                <img src="{% static 'img/reydelpollo1.png' %}" alt="Google"
+                                    style="width: 40px; height: 40px; margin-right: 10px; border-radius: 50%;">
+                                <span class="texto-presupuesto">PRESUPUESTO</span>
                             </a>
 
 
-                            <a href="https://www.facebook.com/profile.php?id=100067972155374" 
+                            <a href="https://www.facebook.com/german.simek" 
                                 class="btn btn-primary w-100 mb-2"
                                 style="display: flex; align-items: center; justify-content: center; background-color: #4267B2; color: white; padding: 10px; border: 1px solid #ddd; transition: transform 0.2s ease; text-decoration: none;"
                                 target="_blank">
@@ -51,12 +57,12 @@
                                     Conéctate con Facebook
                                 </a>
                             
-                            <a href="https://instagram.com" target="_blank" class="btn btn-info w-100 mb-3"
+                            <!-- <a href="https://instagram.com" target="_blank" class="btn btn-info w-100 mb-3"
                             style="display: flex; align-items: center; justify-content: center; background-color: #1DA1F2; color: white; padding: 10px; border: 1px solid #ddd; transition: transform 0.2s ease; text-decoration: none;">
                                 <img src="{% static 'img/instagran.jpg' %}" alt="Instagram"
                                     style="width: 20px; height: 20px; margin-right: 10px; border-radius: 50%;">
                                 Conéctate con Instagram
-                            </a>
+                            </a> -->
                         </div>
                         
 
@@ -76,9 +82,9 @@
                             </div>
                           </div>
 
-                        <div class="col-lg-12 text-end mb-3">
-                            <a href="{% url 'apps.blog_auth:pedir_con' %}" style="font-size: 0.9rem; color: #007bff; text-decoration: none;">No tengo o he olvidado mi contraseña</a>
-                        </div>
+                        <!--<div class="col-lg-12 text-end mb-3">
+                            <a href="{% url 'apps.blog_auth:pedir_con' %}" style="font-size: 0.9rem; color: #007bff; text-decoration: none;">Quiero Contraseña</a>
+                        </div>-->
                                 <script>
                                     document.addEventListener("DOMContentLoaded", function() {
                                     // Restaurar los name originales para que Django los procese
@@ -94,14 +100,16 @@
 
 
                         <!-- Checkbox de recordar sesión -->
-                        <div class="col-lg-12 mt-3 text-start">
+                        <div class="col-lg-12 mt-3 d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-2">
                             <input type="checkbox" id="remember" name="remember">
-                            <label for="remember" style="font-size: 0.9rem; color: #555;">Recordar mi sesión</label>
+                            <label for="remember" style="font-size: 0.9rem; color: #555; margin:0;">Recordar mi sesión</label>
                         </div>
 
-                        <!-- Crear cuenta -->
-                        <div class="col-lg-12 mt-3 text-center">
-                            <p style="font-size: 0.9rem; color: #555;">¿Aún no tienes cuenta? <a href="{% url 'apps.blog_auth:registrarse' %}" style="color: #007bff; text-decoration: none;">REGISTRASE</a></p>
+                        <a href="{% url 'apps.blog_auth:registrarse' %}"
+                            style="font-size: 0.9rem; color: #bb1515; text-decoration: none; font-weight: 600;">
+                            REGISTRASE
+                        </a>
                         </div>
                     </div>
                 </div>

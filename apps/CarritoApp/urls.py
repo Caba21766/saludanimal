@@ -5,6 +5,7 @@ from .views import vista_resumen_factura
 from .views import pago_exitoso, pago_fallo, pago_pendiente
 from . import views as vm   
 
+
 # Importa las vistas correctas
 
 app_name = 'CarritoApp'  # Especificar el espacio de nombres para las rutas
@@ -23,7 +24,9 @@ urlpatterns = [
     path('eliminar_compra/<int:pk>/', views.eliminar_compra, name='eliminar_compra'),
     path('realizar_venta/', views.realizar_venta, name='realizar_venta'),
     path('listar_ventas/', views.listar_ventas, name='listar_ventas'),
-    path('tienda/', views.tienda, name='tienda'),
+    #path('tienda/', views.tienda, name='tienda'),
+    path('tienda/', views.vista_productos, name='tienda'),
+
     path('agregar/<int:producto_id>/', views.agregar_al_carrito, name='Add'),
     path('restar/<int:producto_id>/', views.restar_del_carrito, name='Sub'),
     path('limpiar/', views.limpiar_carrito, name='limpiar_carrito'),
@@ -51,7 +54,9 @@ urlpatterns = [
     path('limpiar/', views.limpiar_carrito, name='limpiar_carrito'),  # Limpiar carrito
     path('sumar/<int:producto_id>/', views.sumar_producto, name='sumar_producto'),
     
-    path('', views.vista_productos, name='vista_productos'),
+    path('', views.tienda, name='inicio'),
+    #path('', views.vista_productos, name='vista_productos'),
+    
     path('modificar_compra/<int:pk>/', views.modificar_compra, name='modificar_compra'),
     path('balance-total/', views.balance_total, name='balance_total'),
     path('balance-ganancia/', views.balance_ganancia, name='balance_ganancia'),
@@ -86,6 +91,7 @@ urlpatterns = [
     path('guardar_factura/', views.guardar_factura, name='guardar_factura'),
     path('guardar_efectivo/', views.guardar_efectivo, name='guardar_efectivo'),
     path('factura/<int:factura_id>/', views.vista_resumen_factura, name='vista_resumen_factura'),
+
 
 
     path('tipo-pago/', views.tipo_pago_list, name='tipo_pago_list'),
@@ -130,7 +136,18 @@ urlpatterns = [
     path("caja/factura/<int:factura_id>/eliminar/", views.eliminar_factura_caja, name="eliminar_factura_caja"),
     path("caja/pago/<int:pago_id>/eliminar/", views.eliminar_pago_caja, name="eliminar_pago_caja"),
  
+    path("invitado/", views.entrar_como_invitado, name="entrar_como_invitado"),
+
+    path("carrito/imprimir-invitado/", views.imprimir_factura_desde_carrito, name="imprimir_factura_invitado"),
+
+    path("presupuesto-whatsapp/pdf/", views.presupuesto_whatsapp_pdf, name="presupuesto_whatsapp_pdf"),
+
     
+    path('', views.vista_productos, name='inicio'),
+
+
+
+
 ]
 #---------------------------------------------------------------------------------------------
          

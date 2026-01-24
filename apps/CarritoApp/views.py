@@ -867,9 +867,6 @@ def lista_cierre_de_caja(request):
             'orden': 1,
         })
 
-
-
-
     # Ordenar por fecha desc y, dentro del mismo día, por 'orden'
     # (reverse=True -> fechas más nuevas primero; y 1 > 0: pagos se muestran antes que facturas si ponés pago=1)
     movimientos.sort(key=lambda x: (x['fecha'], x['orden']), reverse=True)
@@ -899,7 +896,6 @@ def lista_cierre_de_caja(request):
     })
 
 
-
 #--------------------- apps/CarritoApp/views.py
 from django.shortcuts import redirect, get_object_or_404
 from django.views.decorators.http import require_POST
@@ -923,14 +919,6 @@ def actualizar_estado_entrega(request, factura_id):
 
     messages.success(request, "Estado de entrega actualizado.")
     return redirect(next_url)
-
-
-
-
-
-
-
-
 
 #---------LISTA VENDEDOR-- (es del listado para vendedores )------------------------
 from django.shortcuts import render
@@ -2692,15 +2680,21 @@ def actualizar_estado_entrega(request, factura_id):
 #---------------lista_cuenta_corriente-------------------------------------#
 from django.shortcuts import render
 from apps.CarritoApp.models import Factura
+from django.db.models import Q
+from decimal import Decimal
 
 def lista_cuenta_corriente(request):
     apellido_cliente = request.GET.get('apellido_cliente', '')
     fecha_desde = request.GET.get('fecha_desde')
     fecha_hasta = request.GET.get('fecha_hasta')
 
-    # 🔎 Solo trae facturas con "Cuenta Corriente"
-    facturas = Factura.objects.filter(metodo_pago_manual="Cuenta Corriente").order_by('-numero_factura')
+    # ✅ Trae CC tanto manual como FK (por si algunas están en metodo_pago)
+    facturas = Factura.objects.filter(
+        Q(metodo_pago_manual__iexact="Cuenta Corriente") |
+        Q(metodo_pago__tarjeta_nombre__iexact="Cuenta Corriente")
+    ).order_by('-numero_factura')
 
+    # Filtros
     if apellido_cliente:
         facturas = facturas.filter(apellido_cliente__icontains=apellido_cliente)
 
@@ -2710,11 +2704,51 @@ def lista_cuenta_corriente(request):
     if fecha_hasta:
         facturas = facturas.filter(fecha__lte=fecha_hasta)
 
+    # ✅ TOTALES ABAJO (Pagado / Pendiente)
+    total_pagado = Decimal("0")
+    total_pendiente = Decimal("0")
+    cant_pagadas = 0
+    cant_pendientes = 0
+
+    for f in facturas:
+        monto = f.total_con_interes if f.total_con_interes is not None else 0
+        try:
+            monto = Decimal(str(monto))
+        except:
+            monto = Decimal("0")
+
+        if (f.estado_credito or "").strip().lower() == "pagado":
+            total_pagado += monto
+            cant_pagadas += 1
+        else:
+            total_pendiente += monto
+            cant_pendientes += 1
+
+    # ✅ ACÁ VA ESTO (DESPUÉS DEL FOR Y ANTES DEL CONTEXT)
+    total_general_cc = total_pagado + total_pendiente
+    cant_total = cant_pagadas + cant_pendientes
+
     context = {
-        'facturas': facturas
+        'facturas': facturas,
+        'total_pagado': total_pagado,
+        'total_pendiente': total_pendiente,
+        'cant_pagadas': cant_pagadas,
+        'cant_pendientes': cant_pendientes,
+        # ✅ NUEVO
+        'total_general_cc': total_general_cc,
+        'cant_total': cant_total,
     }
 
     return render(request, 'CarritoApp/lista_cuenta_corriente.html', context)
+
+
+
+
+
+
+
+
+
 
 #---------------lista_cuenta_corriente de las facturas-------------------------------------#
 from django.shortcuts import render, get_object_or_404
@@ -3115,6 +3149,8 @@ def mis_mensajes(request):
         {"mensajes": mensajes, "q": q, "solo_respondidos": solo_respondidos},
     )
 
+
+# --- CLIENTE: ver sus propios mensajes (solo lectura) -----------------------
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 from django.views.decorators.http import require_POST
@@ -3147,3 +3183,132 @@ def eliminar_pago_caja(request, pago_id):
 
     messages.success(request, "Pago eliminado correctamente.")
     return redirect(request.POST.get("next") or "CarritoApp:listar_facturas")
+
+
+# --- aceeso para invitado de watzzapp de n8n  -----------------------
+# --- aceeso para invitado de watzzapp de n8n  -----------------------
+# --- aceeso para invitado de watzzapp de n8n  -----------------------
+from django.contrib.auth import get_user_model
+from django.contrib.auth import login
+from django.shortcuts import redirect
+
+def entrar_como_invitado(request):
+    User = get_user_model()
+    u = User.objects.get(username="invitado_whatsapp")
+    login(request, u, backend="django.contrib.auth.backends.ModelBackend")
+    return redirect("/")  # ✅ listo, evita el NoReverseMatch
+
+
+
+# --- pdf imprimir_factura_desde_carrito  -----------------------
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+
+
+def _to_float(val):
+    s = str(val).strip()
+    if not s:
+        return 0.0
+
+    if "," in s and "." in s:
+        # 45.000,00
+        s = s.replace(".", "").replace(",", ".")
+    elif "," in s and "." not in s:
+        # 45000,00
+        s = s.replace(",", ".")
+    # si viene 45000.00 lo dejamos como está
+
+    try:
+        return float(s)
+    except:
+        return 0.0
+
+
+@login_required
+def imprimir_factura_desde_carrito(request):
+    if request.user.username != "invitado_whatsapp":
+        return redirect("CarritoApp:tienda")
+
+    carrito = request.session.get("carrito", {})
+    if not carrito:
+        return redirect("CarritoApp:carrito")
+
+    items = []
+    total = 0.0
+
+    for _, v in carrito.items():
+        precio = _to_float(v.get("precio", 0))
+        cantidad = int(v.get("cantidad", 0))
+        importe = precio * cantidad
+        total += importe
+
+        items.append({
+            "nombre": v.get("nombre", ""),
+            "precio": precio,
+            "cantidad": cantidad,
+            "importe": importe,
+        })
+
+    ticket = request.POST.get("numero_tiket", "").strip()
+
+    context = {
+        "numero_factura": f"INV-{timezone.now().strftime('%Y%m%d-%H%M%S')}",
+        "fecha": timezone.now().strftime("%d/%m/%Y %H:%M"),
+        "nombre_usuario": "Invitado",
+        "apellido_usuario": "WhatsApp",
+        "total_carrito": total,
+        "items": items,
+        "ticket": ticket,
+    }
+
+    # 🔥 clave: guardamos el último presupuesto generado para poder emitirlo en PDF con el MISMO número
+    request.session["factura_invitado_ctx"] = context
+    
+     # ✅ LIMPIAR CARRITO (cuando apretó Finalizar)
+    request.session["carrito"] = {}
+    request.session.modified = True
+
+    return redirect("CarritoApp:presupuesto_whatsapp_pdf")
+
+
+
+# --- muestra pdf invitado  -----------------------
+from django.http import HttpResponse
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+from io import BytesIO
+
+def render_to_pdf(template_src, context):
+    template = get_template(template_src)
+    html = template.render(context)
+    result = BytesIO()
+    pdf = pisa.CreatePDF(src=html, dest=result, encoding="UTF-8")
+    if pdf.err:
+        return None
+    return result.getvalue()
+
+
+from django.template import TemplateDoesNotExist
+@login_required
+def presupuesto_whatsapp_pdf(request):
+    if request.user.username != "invitado_whatsapp":
+        return redirect("CarritoApp:tienda")
+
+    data = request.session.get("factura_invitado_ctx")
+    if not data:
+        return redirect("CarritoApp:carrito")
+
+    try:
+        pdf_bytes = render_to_pdf("CarritoApp/factura_invitado_print.html", data)  # o tu template nuevo
+    except TemplateDoesNotExist as e:
+        return HttpResponse(f"TEMPLATE NO ENCONTRADO: {e}", status=500)
+    except Exception as e:
+        return HttpResponse(f"ERROR PDF: {e}", status=500)
+
+    if not pdf_bytes:
+        return HttpResponse("Error generando PDF (xhtml2pdf)", status=500)
+
+    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="presupuesto_{data.get("numero_factura","INV")}.pdf"'
+    return response

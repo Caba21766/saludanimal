@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Factura WhatsApp</title>
+  <style>
+    body { font-family: Arial; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #ddd; padding: 8px; text-align: left; }
+  </style>
+</head>
+<body>
+
+<h2>Presupuesto: WhatsApp</h2>
+
+<p>
+  <b>N°:</b> {{ numero_factura }} |
+  <b>Fecha:</b> {{ fecha }}
+</p>
+
+<p><b>Cliente:</b> {{ nombre_usuario }} {{ apellido_usuario }}</p>
+
+{% if ticket %}
+<p><b>Ticket:</b> {{ ticket }}</p>
+{% endif %}
+
+<table>
+  <thead>
+    <tr>
+      <th>Producto</th><th>Cant</th><th>Precio</th><th>Importe</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for i in items %}
+    <tr>
+      <td>{{ i.nombre }}</td>
+      <td>{{ i.cantidad }}</td>
+      <td>${{ i.precio|floatformat:2 }}</td>
+      <td>${{ i.importe|floatformat:2 }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h3 style="font-size: 40px; font-weight: 900;">
+  Total: ${{ total_carrito|floatformat:2 }}
+</h3>
+
+<a href="{% url 'CarritoApp:presupuesto_whatsapp_pdf' %}" style="font-size: 22px; font-weight: 700;">
+  Descargalo y envialo por WhatsApp al Rey del Pollo
+</a>
+</body>
+</html>

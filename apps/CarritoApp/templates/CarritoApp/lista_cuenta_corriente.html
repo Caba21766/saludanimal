@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+
 {% block navegacion %}
     {% include 'navegacion.html' %}
 {% endblock %}
@@ -15,9 +16,29 @@
         height: 31.6px; /* ajusta según el alto real del input date */
     }
 </style>
+<style>
+  /* ✅ achica letras de toda la tabla */
+  .tabla-chica {
+    font-size: 12px;   /* probá 12px o 11px */
+  }
+
+  /* ✅ evita que se parta en 2 líneas */
+  .tabla-chica th,
+  .tabla-chica td {
+    white-space: nowrap;
+    padding: 6px 8px;
+  }
+
+  /* ✅ botones más chicos */
+  .tabla-chica .btn {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
+</style>
+
 
 <div class="container py-5">
-    <h1 class="text-center mb-4">Factura de Ctas Corrientes</h1>
+    <h1 class="text-center mb-4">Listado Ctas Ctes</h1>
 
     <!-- Formulario de Filtros -->
     <form method="get" class="mb-4">
@@ -52,13 +73,14 @@
 
         </div>
     </form>
-</div>
-
 
     <!-- Tabla de Facturas -->
+    <table class="table table-bordered table-striped table-hover align-middle tabla-chica">
+
     {% if facturas %}
         <div class="table-responsive">
-            <table class="table table-bordered table-striped table-hover align-middle">
+            <table class="table table-bordered table-striped table-hover align-middle tabla-chica">
+
                 <thead class="table-dark">
                     <tr>
                         <th scope="col">N° Factura</th>
@@ -70,12 +92,14 @@
                         <th scope="col">Acciones</th>
                     </tr>
                 </thead>
+
                 <tbody>
                     {% for factura in facturas %}
                         <tr>
                             <td>{{ factura.numero_factura }}</td>
                             <td>{{ factura.nombre_cliente }} {{ factura.apellido_cliente }}</td>
                             <td>{{ factura.fecha }}</td>
+
                             <td>
                                 {% if factura.metodo_pago %}
                                     {{ factura.metodo_pago.tarjeta_nombre }}
@@ -85,6 +109,7 @@
                                     Sin especificar
                                 {% endif %}
                             </td>
+
                             <td>
                                 {% if factura.metodo_pago_manual == "Cuenta Corriente" %}
                                     {% if factura.estado_credito == "Pagado" %}
@@ -101,27 +126,55 @@
                                 {% else %}
                                     <span class="text-success fw-bold">Pagado</span>
                                 {% endif %}
-                            </td>                       
+                            </td>
+
                             <td>${{ factura.total_con_interes |floatformat:2 }}</td>
+
                             <td>
                                 <div class="d-flex gap-2">
                                     <a href="{% url 'CarritoApp:detalle_factura' factura.id %}" class="btn btn-success btn-sm">
-                                        <i class="bi bi-eye"></i> Ver 
+                                        <i class="bi bi-eye"></i> Ver
                                     </a>
+
                                     <a href="{% url 'CarritoApp:generar_pdf_factura' factura.id %}" class="btn btn-primary btn-sm">
                                         <i class="bi bi-download"></i> Descargar
                                     </a>
+
                                     <a href="{% url 'CarritoApp:pagos_cuenta_corriente' factura.id %}" class="btn btn-warning btn-sm">
                                         <i class="bi bi-list-check"></i> Ver Pagos
                                     </a>
-                                    </a>
 
+                                    {# </a>  <-- este era el </a> extra que te rompía el HTML #}
                                 </div>
                             </td>
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
+
+            <div class="row mt-3 g-2">
+                <div class="col-md-6">
+                    <div class="alert alert-success d-flex justify-content-between align-items-center mb-0">
+                    <div><strong>Pagado</strong> ({{ cant_pagadas }})</div>
+                    <div class="fw-bold">${{ total_pagado|floatformat:2 }}</div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="alert alert-danger d-flex justify-content-between align-items-center mb-0">
+                    <div><strong>Pendiente</strong> ({{ cant_pendientes }})</div>
+                    <div class="fw-bold">${{ total_pendiente|floatformat:2 }}</div>
+                    </div>
+                </div>
+             </div>
+             <div class="row mt-2">
+            <div class="col-12">
+                <div class="alert alert-primary d-flex justify-content-between align-items-center mb-0">
+                <div><strong>Total</strong> ({{ cant_total }})</div>
+                <div class="fw-bold">${{ total_general_cc|floatformat:2 }}</div>
+                </div>
+            </div>
+            </div>
         </div>
     {% else %}
         <p class="text-center text-muted">No tienes facturas disponibles.</p>
