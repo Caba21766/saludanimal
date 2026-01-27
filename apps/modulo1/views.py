@@ -1,12 +1,14 @@
 #----------------- Prueba1 de modulo1 en Factura
 from django.shortcuts import render
-from django.contrib.auth.models import User
+#from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from datetime import date, datetime
 from apps.CarritoApp.models import Factura, MetodoPago
 from django.contrib import messages
 from django.contrib.messages import get_messages
 from django.contrib.auth.decorators import login_required, permission_required
 
+User = get_user_model()   # ✅ PONER ACÁ (arriba de la vista)
 @login_required
 @permission_required('CarritoApp.add_factura', raise_exception=True)
 def prueba(request):
@@ -86,16 +88,44 @@ def prueba(request):
         'metodos_pago': metodos_pago
     })
 
+#----------buscar_clientes----------------------------------------------
+from django.http import JsonResponse
+from django.contrib.auth.models import User
+from django.views.decorators.http import require_GET
+from django.db.models import Q
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+@require_GET
+def buscar_clientes(request):
+    q = request.GET.get('q', '').strip()
+    if not q:
+        return JsonResponse([], safe=False)
+
+    usuarios = User.objects.filter(
+        Q(first_name__icontains=q) |
+        Q(last_name__icontains=q) |
+        Q(dni_usuario__icontains=q)
+    )[:10]
+
+    resultados = [{
+        'first_name': u.first_name,
+        'last_name': u.last_name,
+        'dni_usuario': getattr(u, 'dni_usuario', '') or '',
+    } for u in usuarios]
+
+    return JsonResponse(resultados, safe=False)
 
 #--------------Listado de las facturas------------------------------
 def lista_facturas(request):
     return render(request, 'modulo1/lista_facturas.html')
 
-from django.shortcuts import render
-from datetime import date
+
 
 #--------------Buscar Mercaderia------------------------------------------------------
-
+from django.shortcuts import render
+from datetime import date
 from django.http import HttpResponse, JsonResponse
 from apps.CarritoApp.models import Producto
 
@@ -127,6 +157,9 @@ def buscar_mercaderia(request):
             return JsonResponse({'error': 'Debe proporcionar un número o nombre de producto.'})
     except Exception as e:
         return JsonResponse({'error': 'Error al buscar el producto.'})
+#--------------fin de Buscar Mercaderia------------------------------------------------------
+
+
 
 
 #--------------Crear Factura Modulo1---------------------
@@ -170,32 +203,16 @@ def crear_factura(request):
         'numero_factura': numero_factura,
     })
 
-
-
 #--------- Guardar Prueba (FACTURA) Modulo1 es el SAVE()---------------------
 import json 
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.db import transaction, IntegrityError
-from apps.CarritoApp.models import Factura, Producto
-from apps.CarritoApp.models import MetodoPago, Factura, Producto
+#from apps.CarritoApp.models import MetodoPago, Factura, Producto
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction, IntegrityError
-from apps.CarritoApp.models import Factura, Producto, MetodoPago
-
-
-import json
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.db import transaction, IntegrityError
-from django.urls import reverse
-from django.contrib.auth import get_user_model
+#from apps.CarritoApp.models import Factura, Producto, MetodoPago
 from django.core.exceptions import FieldDoesNotExist
-
-from apps.CarritoApp.models import Factura, Producto, MetodoPago
+from django.contrib.auth.decorators import login_required
 
 
 def _get_user_by_dni(User, dni: str):
@@ -208,8 +225,8 @@ def _get_user_by_dni(User, dni: str):
     except FieldDoesNotExist:
         return User.objects.get(dni=dni)
 
-
-@csrf_exempt
+#@csrf_exempt
+@login_required
 def guardar_prueba(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Método no permitido.'}, status=405)
@@ -353,16 +370,6 @@ def guardar_prueba(request):
     except Exception as e:
         return JsonResponse({'error': f'Error interno: {str(e)}'}, status=500)
 
-
-
-
-
-
-
-
-
-
-
 #------------------Mostrar Factura con Botones--------------------------
 #------------------Mostrar Factura con Botones--------------------------
 #------------------Mostrar Factura con Botones--------------------------
@@ -421,6 +428,7 @@ def registrar_credito(request, factura_id):
 from django.shortcuts import render
 def listar_ctacorriente(request):
     return render(request, 'modulo1/listar_ctacorriente.html')
+
 #----------------------------------------------------------------------------------
 from django.shortcuts import render
 from apps.CarritoApp.models import MetodoPago
@@ -429,14 +437,11 @@ def forma_pago(request):
     metodos_pago = MetodoPago.objects.all()
     return render(request, "prueba.html", {"metodos_pago": metodos_pago})
 
-
-
 #------- de las tarjetas de crédito de factura---------------------
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.db.models import Prefetch
 from apps.CarritoApp.models import MetodoPago, CuotaInteres
-
 
 def agregar_metodo_pago(request):
     if request.method == 'POST':
@@ -523,7 +528,6 @@ def eliminar_cuota(request, cuota_id):
     return redirect('modulo1:asignar_cuotas', metodo_id)
 
 #----------------------------------------------------------------------------------
-
 # views.py en modulo1
 from django.http import FileResponse
 from django.conf import settings
@@ -621,27 +625,3 @@ def obtener_cuotas_tarjeta(request, tarjeta_nombre):
 
     return JsonResponse(data, safe=False)
 
-#--------------------------------------------------------
-
-from django.http import JsonResponse
-from django.contrib.auth.models import User
-from django.views.decorators.http import require_GET
-from django.db.models import Q
-
-@require_GET
-def buscar_clientes(request):
-    q = request.GET.get('q', '').strip()
-    if q:
-        usuarios = User.objects.filter(
-            Q(first_name__icontains=q) | Q(last_name__icontains=q)
-        )[:10]
-        resultados = [
-            {
-                'first_name': u.first_name,
-                'last_name': u.last_name,
-                'dni_usuario': u.dni_usuario or '',
-            }
-            for u in usuarios
-        ]
-        return JsonResponse(resultados, safe=False)
-    return JsonResponse([], safe=False)

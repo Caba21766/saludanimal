@@ -1,17 +1,16 @@
 {% extends 'base.html' %}
 {% load static %}
-
 {% block navegacion %}
 {% include 'navegacion.html' %}
 {% endblock %}
-
 {% block contenido %}
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500&display=swap" rel="stylesheet">
 
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500&display=swap" rel="stylesheet">
 <!-- Bootstrap CSS (idealmente en base.html, pero lo dejo como lo tenías) -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 
 <style>
     /* General */
@@ -171,6 +170,36 @@
     }
 </style>
 
+<style>
+  /* ✅ Compactar espacios solo en el modal de crédito */
+  #creditoModal .modal-body { 
+    padding: 12px 16px; 
+  }
+
+  #creditoModal .modal-header { 
+    padding: 10px 16px; 
+  }
+
+  /* reduce separación entre bloques */
+  #creditoModal .mb-3 { margin-bottom: 8px !important; }
+  #creditoModal .mb-2 { margin-bottom: 6px !important; }
+
+  /* labels más pegadas al input */
+  #creditoModal .form-label { 
+    margin-bottom: 4px; 
+    line-height: 1.1; 
+  }
+
+  /* inputs un poco más bajos */
+  #creditoModal .form-control {
+    padding: 6px 10px;
+  }
+
+  /* botón sin tanto aire arriba */
+  #creditoModal .text-end { margin-top: 8px; }
+</style>
+
+
 <div class="factura-container">
     <!-- Encabezado de la factura -->
     <div style="display: flex; justify-content: space-between; margin-bottom: 20px;
@@ -191,21 +220,19 @@
             <img src="{% static 'img/reydelpollo1.png' %}" alt="Logo" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; margin-top: 10px;">
         </div>
     </div>
-
     <hr>
 
     <!-- Buscar Clientes -->
     <div style="margin-top: 5px; line-height: 1.2; position: relative;">
         <form id="form_cliente" method="POST">
             {% csrf_token %}
-
             <input type="text" id="nombre_apellido_cliente" name="nombre_apellido_cliente"
                 placeholder="Cliente" autocomplete="off"
                 style="width: 200px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px;">
             <input type="hidden" id="dni_cliente_hidden" name="dni_cliente" value="{{ dni_cliente }}">
             <ul id="sugerencias_cliente" class="list-group"
                 style="position: absolute; z-index: 999; width: 200px; display: none; background-color: white;
-                    border: 1px solid #ccc; border-radius: 5px; list-style: none; margin: 0; padding: 0;"></ul>
+                border: 1px solid #ccc; border-radius: 5px; list-style: none; margin: 0; padding: 0;"></ul>
         </form>
     </div>
 
@@ -231,7 +258,6 @@
                         sugerencias.style.display = 'none';
                         return;
                     }
-
                     data.forEach(cliente => {
                         const item = document.createElement('li');
                         item.textContent = `${cliente.first_name} ${cliente.last_name} (${cliente.dni_usuario})`;
@@ -268,14 +294,13 @@
             {% endif %}
         {% endfor %}
     {% endif %}
-
     <hr>
 
     <!-- Mostrar datos del cliente -->
     <div style="display: flex; gap: 20px; justify-content: flex-start;">
         <div style="flex: 1; max-width: 200px;">
-            <p style="margin: 2px 0; font-size: 12px;"><strong>Nombre:</strong> {{ first_name }}</p>
-            <p style="margin: 2px 0; font-size: 12px;"><strong>Apellido:</strong> {{ last_name }}</p>
+           <p style="margin: 2px 0; font-size: 12px;"><strong>Nombre:</strong> <span id="nombre_cliente">{{ first_name }}</span></p>
+            <p style="margin: 2px 0; font-size: 12px;"><strong>Apellido:</strong> <span id="apellido_cliente">{{ last_name }}</span></p>
         </div>
         <div style="flex: 1; max-width: 200px;">
             <p style="margin: 2px 0; font-size: 12px;"><strong>Cel:</strong> {{ tel1_usuario }}</p>
@@ -292,8 +317,10 @@
         </div>
     </div>
     <hr>
+    <!-- FIN Buscar Clientes -->
 
-    <!-- Formulario buscar producto -->
+
+    <!-- Buscar producto -->
     <div style="display: flex; margin-top: 10px; background-color: #f2f2f2; padding: 8px; border-radius: 5px;">
         <form id="producto-form" class="flex-wrap mb-3">
             {% csrf_token %}
@@ -319,10 +346,10 @@
     </div>
 
     <hr>
-
     <style>
         #buscar-mercaderia-nombre { display: none; }
     </style>
+
 
     <!-- Tabla factura -->
     <table class="table table-striped">
@@ -348,7 +375,8 @@
             <tr>
                 <td colspan="4" class="text-end"><strong>Desc. (%):</strong></td>
                 <td>
-                    <input type="number" id="descuento" class="form-control" value="0" min="0" max="100" step="1">
+                    <input type="number" id="descuento" class="form-control" value="0"
+                    min="0" max="100" step="1" autocomplete="off">
                 </td>
             </tr>
 
@@ -375,18 +403,20 @@
                         {% endif %}
                     </div>
 
+
                     <!-- Modal Cuenta Corriente -->
                     <div class="modal fade" id="creditoModal" tabindex="-1" aria-labelledby="creditoModalLabel" aria-hidden="true">
                         <div class="modal-dialog">
                             <div class="modal-content shadow">
 
-                                <div class="modal-header bg-light border-bottom d-flex flex-column align-items-start">
+                                <div class="modal-header bg-light border-bottom d-flex      flex-column align-items-start">
                                     <small id="metodoPagoSeleccionado" class="text-muted fw-semibold mb-1" style="font-size: 14px;"></small>
                                     <div class="d-flex justify-content-between align-items-center w-100">
                                         <h5 class="modal-title" id="creditoModalLabel" style="color: #0b2c4e; font-weight: bold;">Registrar Cobro</h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                                     </div>
                                 </div>
+
 
                                 <div class="modal-body">
                                     <form id="creditoForm" class="needs-validation" novalidate>
@@ -490,13 +520,17 @@
                 <td colspan="4"></td>
                 <td style="text-align: center; padding-top: 10px;">
                     <!-- dejo tu onclick como estaba para no romper nada -->
-                    <button type="button" id="guardar" class="btn btn-primary btn-sm me-1" style="font-size: 9px;" onclick="redirigirGuardar('{{ factura.id }}')">
-                        Aceptar
+                    <button type="button" id="guardar" class="btn btn-primary btn-sm me-1" style="font-size: 9px;">
+                        Aceptar1
                     </button>
                 </td>
             </tr>
         </tfoot>
     </table>
+    <!-- Fin de Tabla factura -->
+
+
+
 
     <!-- Cálculos modal crédito -->
     <script>
@@ -539,31 +573,79 @@
         }
 
         document.addEventListener("DOMContentLoaded", function () {
-            let creditoModal = document.getElementById('creditoModal');
-            if (creditoModal) {
-                creditoModal.addEventListener('show.bs.modal', function () {
-                    actualizarSuma();
-                });
+            // ✅ función para resetear descuento a 0 (reutilizable)
+            function resetDescuento() {
+                const d = document.getElementById("descuento");
+                if (!d) return;
+                d.value = "0";
+                d.defaultValue = "0";
+
+                if (typeof calcularTotalGeneral === "function") calcularTotalGeneral();
+                if (typeof actualizarSuma === "function") actualizarSuma();
             }
 
-            let descuentoInput = document.getElementById("descuento");
+                // ✅ 1) Descuento siempre empieza en 0
+            const descuentoInput = document.getElementById("descuento");
             if (descuentoInput) {
+                resetDescuento();
+
+                // ✅ evita que se cambie solo con la ruedita del mouse
+                descuentoInput.addEventListener("wheel", function (e) {
+                    e.preventDefault();
+                }, { passive: false });
+
+                // ✅ cuando cambia el descuento recalcular totales y suma del modal
                 descuentoInput.addEventListener("input", function () {
-                    calcularTotalGeneral();
-                    actualizarSuma();
+                    if (typeof calcularTotalGeneral === "function") {
+                        calcularTotalGeneral();
+                    }
+                    if (typeof actualizarSuma === "function") {
+                        actualizarSuma();
+                    }
                 });
             }
 
-            let cuotasInput = document.getElementById("cuotas");
-            if (cuotasInput) {
-                cuotasInput.addEventListener("input", function () {
-                    calcularCuotaMensual();
+            // ✅ 2) Cuando elegís un cliente (click en sugerencia) → descuento vuelve a 0 antes de submit
+            const sugerenciasCliente = document.getElementById("sugerencias_cliente");
+            if (sugerenciasCliente) {
+                sugerenciasCliente.addEventListener("click", function (e) {
+                    const li = e.target.closest("li");
+                    if (!li) return;
+
+                    // esperamos un "tick" para que tu código asigne el DNI y el input
+                    setTimeout(() => {
+                        resetDescuento();
+                    }, 0);
                 });
             }
 
-            actualizarSuma();
         });
+
+        // ✅ 2) Cuando abre el modal de crédito recalcula suma
+        const creditoModal = document.getElementById("creditoModal");
+        if (creditoModal) {
+            creditoModal.addEventListener("show.bs.modal", function () {
+                actualizarSuma();
+            });
+        }
+
+        // ✅ 3) Si cambian cuotas recalcular cuota mensual
+        const cuotasInput = document.getElementById("cuotas");
+        if (cuotasInput) {
+            cuotasInput.addEventListener("input", function () {
+                calcularCuotaMensual();
+            });
+        }
+
+        // ✅ 4) Inicial: recalcular todo al cargar
+        if (typeof calcularTotalGeneral === "function") {
+            calcularTotalGeneral();
+        }
+        actualizarSuma();
     </script>
+    <!-- Fin Cálculos modal crédito -->
+
+
 
     <!-- Productos + totales -->
     <script>
@@ -688,13 +770,12 @@
         const totalConDescuento = totalGeneral - (totalGeneral * (descuentoPorcentaje / 100));
         document.getElementById('total-con-descuento').textContent = `$${totalConDescuento.toFixed(2)}`;
     }
-
-    document.getElementById('descuento').addEventListener('input', calcularTotalGeneral);
     </script>
+    <!-- Fin Productos + totales -->
 
     <!-- Autocomplete nombre producto -->
     <script>
-    document.getElementById('nombre_producto').addEventListener('input', function () {
+        document.getElementById('nombre_producto').addEventListener('input', function () {
         const query = this.value;
         const sugerencias = document.getElementById('sugerencias');
 
@@ -740,150 +821,167 @@
         } else {
             sugerencias.style.display = 'none';
         }
-    });
-
-    /**
-     * ✅ IMPORTANTE: Tu código tenía un "guardar" duplicado con variables tarjetaNombre/tarjetaNumero no definidas.
-     * Para no "borrar", lo dejo comentado para evitar dobles guardados y errores.
-     */
+        });
     </script>
+    <!-- Fin Autocomplete nombre producto Termina -->
+  
 
-    {# 
-    <script>
-    // --------GUARDAR producto--------------------------------GUARDAR producto
-    document.getElementById('guardar').addEventListener('click', function () {
-        // ... ESTE BLOQUE lo dejo comentado porque usa tarjetaNombre/tarjetaNumero sin definir
-    });
-    function limpiarFormulario() { ... }
-    </script>
-    #}
+
 
     <!-- ✅ Flujo principal de método de pago + guardado -->
     <script>
-    // ✅ Solo una vez (evita duplicaciones si el template se reinyecta)
-    if (!window.__FACTURA_BINDINGS__) {
-        window.__FACTURA_BINDINGS__ = true;
+        // ✅ Solo una vez (evita duplicaciones si el template se reinyecta)
+        if (!window.__FACTURA_BINDINGS__) {
+            window.__FACTURA_BINDINGS__ = true;
 
-        // ✅ Solo guardar si el usuario presiona "Guardar Crédito"
-        document.getElementById('guardarCredito').addEventListener('click', function () {
-            let modalElement = document.getElementById('creditoModal');
-            modalElement.dataset.confirmado = "true";
-            guardarFactura("guardarCredito");
-        });
+        // ✅ Guardar crédito (solo si existe el botón)
+        const btnGuardarCredito = document.getElementById('guardarCredito');
+        if (btnGuardarCredito) {
+            btnGuardarCredito.addEventListener('click', function () {
+                let modalElement = document.getElementById('creditoModal');
+                if (modalElement) modalElement.dataset.confirmado = "true";
+                guardarFactura("guardarCredito");
+            });
+        }
 
-        // ✅ Guardar tarjeta
-        document.getElementById('guardarTarjeta').addEventListener('click', function () {
-            const tarjetaNumeroInput = document.getElementById('tarjeta_numero_tarjeta');
-            const ticketInput = document.getElementById('numero_ticket_tarjeta');
-            const cuotasInput = document.getElementById('cuotas_tarjeta');
-            const interesInput = document.getElementById('interes_tarjeta');
+        // ✅ Guardar tarjeta (solo si existe el botón)
+        const btnGuardarTarjeta = document.getElementById('guardarTarjeta');
+        if (btnGuardarTarjeta) {
+            btnGuardarTarjeta.addEventListener('click', function () {
+                const tarjetaNumeroInput = document.getElementById('tarjeta_numero_tarjeta');
+                const ticketInput = document.getElementById('numero_ticket_tarjeta');
+                const cuotasInput = document.getElementById('cuotas_tarjeta');
+                const interesInput = document.getElementById('interes_tarjeta');
 
-            const tarjetaNumero = tarjetaNumeroInput?.value.trim() || '';
-            const ticketNumero = ticketInput?.value.trim() || '';
-            const cuotasStr = cuotasInput?.value.trim() || '';
-            const interesStr = interesInput?.value.trim() || '';
+                const tarjetaNumero = tarjetaNumeroInput?.value.trim() || '';
+                const ticketNumero = ticketInput?.value.trim() || '';
+                const cuotasStr = cuotasInput?.value.trim() || '';
+                const interesStr = interesInput?.value.trim() || '';
 
-            if (!tarjetaNumero || !ticketNumero || !cuotasStr || !interesStr) {
-                alert("⚠ Por favor, completá todos los campos y seleccioná una cuota válida.");
-                return;
-            }
+                if (!tarjetaNumero || !ticketNumero || !cuotasStr || !interesStr) {
+                    alert("⚠ Por favor, completá todos los campos y seleccioná una cuota válida.");
+                    return;
+                }
 
-            const cuotas = parseInt(cuotasStr);
-            const interes = parseFloat(interesStr);
+                const cuotas = parseInt(cuotasStr);
+                const interes = parseFloat(interesStr);
 
-            if (isNaN(cuotas) || isNaN(interes) || cuotas <= 0 || interes < 0) {
-                alert("⚠ Los datos de la cuota son inválidos. Por favor, volvé a seleccionar.");
-                return;
-            }
+                if (isNaN(cuotas) || isNaN(interes) || cuotas <= 0 || interes < 0) {
+                    alert("⚠ Los datos de la cuota son inválidos. Por favor, volvé a seleccionar.");
+                    return;
+                }
 
-            const totalBase = parseFloat(document.getElementById('total-con-descuento')?.textContent.replace('$', '').trim()) || 0;
-            const totalConInteres = totalBase + (totalBase * (interes / 100));
-            const cuotaMensual = (totalConInteres / cuotas).toFixed(2);
+                const totalBase = parseFloat(document.getElementById('total-con-descuento')?.textContent.replace('$', '').trim()) || 0;
+                const totalConInteres = totalBase + (totalBase * (interes / 100));
+                const cuotaMensual = (totalConInteres / cuotas).toFixed(2);
 
-            document.getElementById('cuota_mensual').value = `$${cuotaMensual}`;
+                const cuotaMensualInput = document.getElementById('cuota_mensual');
+                if (cuotaMensualInput) cuotaMensualInput.value = `$${cuotaMensual}`;
 
-            guardarFactura("guardarTarjeta");
-        });
+                guardarFactura("guardarTarjeta");
+            });
+        }
 
-        // ✅ Método de pago (DEJAMOS UNO SOLO: el más completo con fetch cuotas)
-        document.getElementById('metodo-pago').addEventListener('change', function () {
-            const metodoPago = this.value;
+        // ✅ Método de pago (solo si existe el select)
+        const selectMetodoPago = document.getElementById('metodo-pago');
+        if (selectMetodoPago) {
+            selectMetodoPago.addEventListener('change', function () {
+                const metodoPago = this.value;
 
-            if (metodoPago === "Efectivo") {
-                guardarFactura("guardar");
-                return;
-            }
+                if (metodoPago === "Efectivo") {
+                    guardarFactura("guardar");
+                    return;
+                }
 
-            if (metodoPago === "Cuenta Corriente") {
-                new bootstrap.Modal(document.getElementById('creditoModal')).show();
-                return;
-            }
+                if (metodoPago === "Cuenta Corriente") {
+                    const modalCreditoEl = document.getElementById('creditoModal');
+                    if (modalCreditoEl) new bootstrap.Modal(modalCreditoEl).show();
+                    return;
+                }
 
-            document.getElementById('modalTarjetaLabel').textContent = `Cobro con: ${metodoPago}`;
-            const modalTarjeta = new bootstrap.Modal(document.getElementById('modalTarjeta'));
-            modalTarjeta.show();
+                const modalLabel = document.getElementById('modalTarjetaLabel');
+                if (modalLabel) modalLabel.textContent = `Cobro con: ${metodoPago}`;
 
-            fetch(`/modulo1/api/cuotas/${encodeURIComponent(metodoPago)}/`)
-                .then(res => res.json())
-                .then(data => {
-                    const lista = document.getElementById('lista-cuotas');
-                    lista.innerHTML = '';
+                const modalTarjetaEl = document.getElementById('modalTarjeta');
+                if (modalTarjetaEl) {
+                    const modalTarjeta = new bootstrap.Modal(modalTarjetaEl);
+                    modalTarjeta.show();
+                }
 
-                    if (data.length === 0) {
-                        lista.innerHTML = '<div class="text-danger">⚠ No hay cuotas disponibles para esta tarjeta.</div>';
-                        return;
-                    }
+                fetch(`/modulo1/api/cuotas/${encodeURIComponent(metodoPago)}/`)
+                    .then(res => res.json())
+                    .then(data => {
+                        const lista = document.getElementById('lista-cuotas');
+                        if (!lista) return;
 
-                    data.forEach(item => {
-                        const btn = document.createElement('button');
-                        btn.type = 'button';
-                        btn.className = 'list-group-item list-group-item-action';
-                        btn.textContent = `${item.cuotas} cuota(s) - ${item.interes}% interés`;
+                        lista.innerHTML = '';
 
-                        btn.addEventListener('click', () => {
-                            document.getElementById('cuotas_tarjeta').value = item.cuotas;
-                            document.getElementById('interes_tarjeta').value = item.interes;
+                        if (!Array.isArray(data) || data.length === 0) {
+                            lista.innerHTML = '<div class="text-danger">⚠ No hay cuotas disponibles para esta tarjeta.</div>';
+                            return;
+                        }
 
-                            const total = parseFloat(document.getElementById('total-con-descuento').textContent.replace('$', '')) || 0;
-                            const totalConInteres = total + (total * (item.interes / 100));
-                            const cuotaMensual = totalConInteres / item.cuotas;
+                        data.forEach(item => {
+                            const btn = document.createElement('button');
+                            btn.type = 'button';
+                            btn.className = 'list-group-item list-group-item-action';
+                            btn.textContent = `${item.cuotas} cuota(s) - ${item.interes}% interés`;
 
-                            document.getElementById('cuota_mensual').value = `$${cuotaMensual.toFixed(2)}`;
+                            btn.addEventListener('click', () => {
+                                const cuotasTarjeta = document.getElementById('cuotas_tarjeta');
+                                const interesTarjeta = document.getElementById('interes_tarjeta');
+                                if (cuotasTarjeta) cuotasTarjeta.value = item.cuotas;
+                                if (interesTarjeta) interesTarjeta.value = item.interes;
 
-                            document.querySelectorAll('#lista-cuotas .list-group-item').forEach(el => el.classList.remove('active'));
-                            btn.classList.add('active');
+                                const total = parseFloat(document.getElementById('total-con-descuento')?.textContent.replace('$', '')) || 0;
+                                const totalConInteres = total + (total * (item.interes / 100));
+                                const cuotaMensual = totalConInteres / item.cuotas;
+
+                                const cuotaMensualInput = document.getElementById('cuota_mensual');
+                                if (cuotaMensualInput) cuotaMensualInput.value = `$${cuotaMensual.toFixed(2)}`;
+
+                                document.querySelectorAll('#lista-cuotas .list-group-item').forEach(el => el.classList.remove('active'));
+                                btn.classList.add('active');
+                            });
+
+                            lista.appendChild(btn);
                         });
-
-                        lista.appendChild(btn);
+                    })
+                    .catch(err => {
+                        console.error("Error al cargar cuotas:", err);
+                        const lista = document.getElementById('lista-cuotas');
+                        if (lista) lista.innerHTML = '<div class="text-danger">Error al obtener cuotas.</div>';
                     });
-                })
-                .catch(err => {
-                    console.error("Error al cargar cuotas:", err);
-                    document.getElementById('lista-cuotas').innerHTML = '<div class="text-danger">Error al obtener cuotas.</div>';
-                });
-        });
+            });
+        }
 
-        // ✅ Botón aceptar → guarda (este era el que te quedaba duplicado)
-        document.getElementById('guardar').addEventListener('click', function () {
-            guardarFactura("guardar");
-        });
-    }
+        // ✅ Botón aceptar → guarda (solo si existe)
+        const btnAceptar = document.getElementById('guardar');
+        if (btnAceptar) {
+            btnAceptar.addEventListener('click', function () {
+                guardarFactura("guardar");
+            });
+        }
+        }
 
-    // ✅ ------------ guardar Factura (correcciones mínimas) ----------------------------
-    function guardarFactura(origen) {
+        // ✅ ------------ guardar Factura (correcciones mínimas) ----------------------------
+        function guardarFactura(origen) {
         console.log(`📌 Guardando desde: ${origen}`);
 
         const guardarBtn = document.getElementById('guardar');
-        guardarBtn.disabled = true;
-        guardarBtn.textContent = "Guardando...";
+        if (guardarBtn) {
+            guardarBtn.disabled = true;
+            guardarBtn.textContent = "Guardando...";
+        }
 
         const fecha = new Date().toISOString().split('T')[0];
 
-        // ✅ CORREGIDO: tu template usa dni_cliente_hidden (no existe dni_cliente)
         const dniCliente = document.getElementById('dni_cliente_hidden')?.value.trim() || '';
 
-        const nombreCliente = document.querySelector('p:nth-of-type(1) strong')?.nextSibling?.textContent.trim() || '';
-        const apellidoCliente = document.querySelector('p:nth-of-type(2) strong')?.nextSibling?.textContent.trim() || '';
+        // ✅ MÁS ROBUSTO: tomamos de spans con ID (tenés que agregarlos en el HTML)
+        const nombreCliente = document.getElementById('nombre_cliente')?.textContent.trim() || '';
+        const apellidoCliente = document.getElementById('apellido_cliente')?.textContent.trim() || '';
+
         const domicilioFactura = document.getElementById("domicilio_usuario")?.textContent?.trim() || '';
         const cuilFactura = document.getElementById("cuil_usuario")?.textContent?.trim() || '';
         const ivaFactura = document.getElementById("iva_usuario")?.textContent?.trim() || '';
@@ -899,9 +997,11 @@
         let interes = 0;
         let cuotas = 1;
         let totalConInteres = totalConDescuento;
-        let cuotaMensual = 0;
 
-        if (origen === "guardarCredito" || document.getElementById("creditoModal").classList.contains("show")) {
+        const creditoModal = document.getElementById("creditoModal");
+        const tarjetaModal = document.getElementById("modalTarjeta");
+
+        if (origen === "guardarCredito" || (creditoModal && creditoModal.classList.contains("show"))) {
             tarjetaNumero = document.getElementById('tarjeta_numero_credito')?.value.trim() || '';
             tarjetaNombre = metodoPago;
             numeroTicket = document.getElementById('numero_ticket_credito')?.value.trim() || '';
@@ -911,18 +1011,18 @@
             totalConInteres = parseFloat(document.getElementById('totalConInteres')?.value.trim() || totalConDescuento);
         }
 
-        if (origen === "guardarTarjeta" || document.getElementById("modalTarjeta").classList.contains("show")) {
+        if (origen === "guardarTarjeta" || (tarjetaModal && tarjetaModal.classList.contains("show"))) {
             tarjetaNumero = document.getElementById('tarjeta_numero_tarjeta')?.value.trim() || '';
             tarjetaNombre = metodoPago;
             numeroTicket = document.getElementById('numero_ticket_tarjeta')?.value.trim() || '';
             cuotas = parseInt(document.getElementById('cuotas_tarjeta')?.value.trim() || 1);
             interes = parseFloat(document.getElementById('interes_tarjeta')?.value.trim() || 0);
 
-            const totalBase = parseFloat(document.getElementById('total-con-descuento').textContent.replace('$', '')) || 0;
+            const totalBase = parseFloat(document.getElementById('total-con-descuento')?.textContent.replace('$', '')) || 0;
             totalConInteres = totalBase + (totalBase * (interes / 100));
         }
 
-        cuotaMensual = cuotas > 0 ? (totalConInteres / cuotas).toFixed(2) : 0;
+        const cuotaMensual = cuotas > 0 ? (totalConInteres / cuotas).toFixed(2) : "0";
 
         const detalleProductos = [];
         document.querySelectorAll('#producto-info tr').forEach(row => {
@@ -969,7 +1069,7 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
             },
             body: JSON.stringify(payload),
         })
@@ -986,21 +1086,12 @@
             alert("Ocurrió un error al guardar la factura.");
         })
         .finally(() => {
-            guardarBtn.disabled = false;
-            guardarBtn.textContent = "Aceptar";
+            if (guardarBtn) {
+                guardarBtn.disabled = false;
+                guardarBtn.textContent = "Aceptar";
+            }
         });
-    }
+        }
     </script>
-
-    <!-- ✅ Dejé esto como lo tenías, pero si no existe la ruta, podés comentarlo -->
-    {# <script src="{% static 'path/to/your/javascript.js' %}"></script> #}
-
-    {# 
-    ✅ Duplicados que tenías al final (Bootstrap repetido + scripts fuera del block).
-    Los dejo comentados para no romper estructura del HTML ni duplicar cargas.
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    #}
-
 </div>
 {% endblock %}
