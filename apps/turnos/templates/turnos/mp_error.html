@@ -1,0 +1,9 @@
+{% extends "turnos/base_turnos.html" %}
+{% block content %}
+<div class="alert alert-danger">
+  <h4>Error al generar el enlace de pago</h4>
+  <p><b>{{ detalle }}</b> (status: {{ status }})</p>
+  <pre style="white-space:pre-wrap">{{ respuesta|safe }}</pre>
+  <a class="btn btn-secondary" href="{% url 'turnos:paso5_hora' %}">Volver</a>
+</div>
+{% endblock %}

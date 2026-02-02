@@ -1,17 +1,18 @@
  
 {% load static %} 
-{% static 'img/reydelpollo.png' as DEFAULT_AVATAR %}
+{% static 'img/Salud3.png' as DEFAULT_AVATAR %}
 {% load permisos_tags %}
 <!DOCTYPE html>
 <html lang="es-ar">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block titulo %}Simek Osiris German{% endblock %}</title>
+    <title>{% block titulo %}Salud Animal | Atención veterinaria y turnos{% endblock %}</title>
+    <meta name="description" content="{% block descripcion %}Salud Animal: turnos y atención veterinaria. Consultas, vacunación y cuidados para tu mascota.{% endblock %}">
+
 
     <link rel="stylesheet" href="{% static 'css/stile.css' %}">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- Bootstrap CSS desde CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
@@ -138,6 +139,7 @@
 </style>
 
 
+
 <body>
     <button id="btn-mensaje-flotante"
                 class="btn mensaje-float-up"
@@ -156,9 +158,9 @@
         <div class="container">
             <!-- Logo -->
             <a class="navbar-brand d-flex align-items-center gap-2" href="{% url 'index' %}" style="color: white;">
-                <img src="{% static 'img/reydelpollo2.png' %}" alt="Logo"
+                <img src="{% static 'img/Salud4.png' %}" alt="Logo"
                      style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
-                <span class="fuente-animal" style="font-size: 1.2rem; font-weight: bold;">Rey del Pollo</span>
+                <span class="fuente-animal" style="font-size: 1.2rem; font-weight: bold;">Salud Animal</span>
             </a>
 
             <!-- Botón hamburguesa (se debe poner aquí) -->
@@ -181,11 +183,15 @@
                             <ul class="dropdown-menu" aria-labelledby="colaboradorDropdown">
                                 <li><a class="dropdown-item" href="{% url 'CarritoApp:mis_facturas' %}">Mis Compras</a></li>
                                 <li><a class="dropdown-item" href="{% url 'libros:listar_ctacorriente' %}">Cuenta Corriente</a></li>
-                                {% if user.is_staff %}
+                                
                                 <li><a class="dropdown-item" href="{% url 'mascota:lista_mascotas' %}">Mi Familia</a></li>
-                                {% endif %}
+                                
                                 <li>
                                 <a class="dropdown-item" href="{% url 'CarritoApp:mis_mensajes' %}">Mensajes</a>
+                                </li>
+
+                                <li>
+                                <a class="dropdown-item" href="{% url 'turnos:cancelar_lista' %}">Mis turnos</a>
                                 </li>
 
                             </ul>
@@ -194,10 +200,8 @@
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'nosotros' %}" style="font-weight: bold; color: #75bb93;">Rey del Pollo</a>
+                        <a class="nav-link" href="{% url 'nosotros' %}" style="font-weight: bold; color: #75bb93;">Salud Animal</a>
                     </li>
-
-                    
 
                     <!-- Opciones para colaboradores (solo staff) -->
                     {% if user.is_staff %}
@@ -238,6 +242,18 @@
                     </li>
                 {% endif %}
 
+                    {% if user.is_staff %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="colaboradorDropdown" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            Turnos
+                        </a>
+
+                        <ul class="dropdown-menu" aria-labelledby="colaboradorDropdown">
+                            <li><a class="dropdown-item" href="{% url 'turnos:listado' %}">Consultas Turnos</a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
 
                 {% if user.is_staff or user|has_group:"Facturadores" %}
                     <li class="nav-item dropdown">
@@ -270,65 +286,60 @@
                 {% endif %}
                 </ul>
                 
-<!-- Perfil de usuario y autenticación -->
-<ul class="navbar-nav ms-auto">
-  {% if user.is_authenticated %}
-  <li class="nav-item dropdown">
-    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
-       role="button" data-bs-toggle="dropdown" aria-expanded="false">
-      <div class="dropdown d-flex align-items-center">
+                <!-- Perfil de usuario y autenticación -->
+                <ul class="navbar-nav ms-auto">
+                {% if user.is_authenticated %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
+                    role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <div class="dropdown d-flex align-items-center">
 
-        <img
-          src="{% if user.imagen_usuario and user.imagen_usuario.name %}{{ user.imagen_usuario.url }}{% else %}{{ DEFAULT_AVATAR }}{% endif %}"
-          onerror="this.onerror=null;this.src='{{ DEFAULT_AVATAR }}';"
-          width="40" height="40"
-          class="rounded-circle me-2"
-          alt="Imagen de perfil">
+                        <img
+                        src="{% if user.imagen_usuario and user.imagen_usuario.name %}{{ user.imagen_usuario.url }}{% else %}{{ DEFAULT_AVATAR }}{% endif %}"
+                        onerror="this.onerror=null;this.src='{{ DEFAULT_AVATAR }}';"
+                        width="40" height="40"
+                        class="rounded-circle me-2"
+                        alt="Imagen de perfil">
 
-        <span>
-          {{ request.user.first_name|default:request.user.last_name|default:request.user.email|default:request.user.username }}
-        </span>
-      </div>
-    </a>
+                        <span>
+                        {{ request.user.first_name|default:request.user.last_name|default:request.user.email|default:request.user.username }}
+                        </span>
+                    </div>
+                    </a>
 
-    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-      {% if request.user.is_authenticated and request.user.username != "invitado_whatsapp" %}  
-      <li><a class="dropdown-item" href="{% url 'apps.blog_auth:editar_usuario' user.pk %}">Modificar Perfil</a></li>
-      {% endif %}
-      {% if user.is_staff %}
-      <li><a class="dropdown-item" href="{% url 'blog_auth:lista_usuarios' %}">Listado de Usuarios</a></li>
-      {% endif %}
-      <li>
-        <form method="post" action="{% url 'apps.blog_auth:cerrar_sesion' %}">
-          {% csrf_token %}
-          <button type="submit" class="dropdown-item">Cerrar sesión</button>
-        </form>
-      </li>
-    </ul>
-  </li>
-  {% else %}
-  <li class="nav-item">
-    <a class="nav-link" href="{% url 'apps.blog_auth:iniciar_sesion' %}" style="font-weight: bold; font-size: 18px;">
-      Iniciar Sesión
-    </a>
-  </li>
-  {% endif %}
-</ul>
-
-
-
-
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                    {% if request.user.is_authenticated and request.user.username != "invitado_whatsapp" %}  
+                    <li><a class="dropdown-item" href="{% url 'apps.blog_auth:editar_usuario' user.pk %}">Modificar Perfil</a></li>
+                    {% endif %}
+                    {% if user.is_staff %}
+                    <li><a class="dropdown-item" href="{% url 'blog_auth:lista_usuarios' %}">Listado de Usuarios</a></li>
+                    {% endif %}
+                    <li>
+                        <form method="post" action="{% url 'apps.blog_auth:cerrar_sesion' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="dropdown-item">Cerrar sesión</button>
+                        </form>
+                    </li>
+                    </ul>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'apps.blog_auth:iniciar_sesion' %}" style="font-weight: bold; font-size: 18px;">
+                    Iniciar Sesión
+                    </a>
+                </li>
+                {% endif %}
+                </ul>
                 
             </div>
         </div>
     </nav>
 
-    {% block contenido %}
+{% block contenido %}
      <!-- contenido -->
-    {% endblock %}
+{% endblock %}
 
 
-<!-- Pie de página -->
 <!-- Pie de página -->
 <footer class="bg-dark text-white py-4">
         <div class="container">
@@ -361,14 +372,10 @@
                     <span class="ms-2">Instituto de Informática</span>
                 </div>
             </div>
-            
-            
         </div>
 </footer>
-
     <!-- Cargar Bootstrap JS y otros scripts necesarios -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
 </body>
-
 </html>

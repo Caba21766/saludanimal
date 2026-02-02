@@ -1,0 +1,15 @@
+{% extends "turnos/base_turnos.html" %}
+{% block content %}
+<div class="card shadow-sm border-0 rounded-4">
+  <div class="card-body p-4 p-md-5">
+    <h2 class="fw-black mb-3">{{ titulo }}</h2>
+
+    <div class="p-3 rounded-4 bg-white border">
+      <div><b>Estado:</b> {{ status }}</div>
+      {% if payment_id %}<div><b>Payment ID:</b> {{ payment_id }}</div>{% endif %}
+    </div>
+
+    <a class="btn btn-success mt-4" href="{% url 'turnos:home' %}">Volver</a>
+  </div>
+</div>
+{% endblock %}

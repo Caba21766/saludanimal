@@ -23,8 +23,6 @@ class AnonymousRequiredMixin:
         return super().dispatch(request, *args, **kwargs)
 
 
-
-
 # -------------------- REGISTRO --------------------
 class RegistrarseView(FormView):
     template_name = 'users/registrarse.html'
@@ -147,3 +145,46 @@ def edit_usuario_admin(request, pk):
     # ✅ IMPORTANTE: si tu template está en templates/editar_usuario.html (sin carpeta users)
     # cambiá a 'editar_usuario.html'
     return render(request, "users/editar_usuario.html", {"form": form, "usuario": usuario})
+
+
+
+
+from django.http import Http404
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import get_user_model
+
+from .forms import EditarUsuarioForm
+
+User = get_user_model()
+
+@login_required
+def editar_usuario_turnos(request):
+    """
+    Edita el usuario encontrado en Turnos (guardado en session['turno_wizard']['user_id']).
+    """
+    wiz = request.session.get("turno_wizard", {})
+    user_id = wiz.get("user_id")
+
+    if not user_id:
+        messages.error(request, "Primero ingresá el DNI y presioná Aceptar para cargar el titular.")
+        return redirect("turnos:paso1_dni")
+
+    usuario = get_object_or_404(User, pk=user_id)
+
+    if request.method == "POST":
+        form = EditarUsuarioForm(request.POST, request.FILES, instance=usuario)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "✅ Datos actualizados correctamente.")
+            return redirect("turnos:paso1_dni")
+    else:
+        # ✅ ESTO precarga los datos
+        form = EditarUsuarioForm(instance=usuario)
+
+    return render(request, "users/editar_usuario.html", {
+        "form": form,
+        "usuario": usuario,
+        "desde_turnos": True,
+    })

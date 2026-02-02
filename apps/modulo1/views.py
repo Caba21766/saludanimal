@@ -342,7 +342,7 @@ def guardar_prueba(request):
                 total_con_interes=total_con_interes,
                 cuota_mensual=float(data.get('cuota_mensual', 0) or 0),
                 detalle_productos=json.dumps(detalle_productos),
-                vendedor=request.user.get_full_name() if request.user.is_authenticated else 'Sin asignar',
+                vendedor=(request.user.get_full_name().strip() or request.user.username) if request.user.is_authenticated else "Sin asignar",
                 cuotas=data.get('cuotas', 1),
                 interes=data.get('interes', 0),
                 tarjeta_nombre=tarjeta_nombre,

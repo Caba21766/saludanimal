@@ -24,7 +24,7 @@ urlpatterns = [
     path('eliminar_compra/<int:pk>/', views.eliminar_compra, name='eliminar_compra'),
     path('realizar_venta/', views.realizar_venta, name='realizar_venta'),
     path('listar_ventas/', views.listar_ventas, name='listar_ventas'),
-    #path('tienda/', views.tienda, name='tienda'),
+    path('tienda/', views.tienda, name='tienda'),
     path('tienda/', views.vista_productos, name='tienda'),
 
     path('agregar/<int:producto_id>/', views.agregar_al_carrito, name='Add'),
@@ -144,6 +144,7 @@ urlpatterns = [
 
     
     path('', views.vista_productos, name='inicio'),
+
 
 
 

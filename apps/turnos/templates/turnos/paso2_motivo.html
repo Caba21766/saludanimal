@@ -1,0 +1,28 @@
+{% extends "turnos/base_turnos.html" %}
+{% block content %}
+<div class="card shadow-sm border-0 rounded-4">
+  <div class="card-body p-4 p-md-5">
+    <h2 class="fw-black mb-1">Seleccioná el motivo</h2>
+    <p class="text-muted mb-4">Podés cargar todos los motivos desde el Admin.</p>
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="vstack gap-2">
+        {% for radio in form.motivo %}
+          <label class="card-option p-3 d-flex gap-3 align-items-start">
+            {{ radio.tag }}
+            <div>
+              <div class="fw-bold">{{ radio.choice_label }}</div>
+            </div>
+          </label>
+        {% endfor %}
+      </div>
+
+      <div class="d-flex justify-content-between mt-4">
+        <a class="btn btn-outline-secondary" href="{% url 'turnos:paso1_dni' %}">Anterior</a>
+        <button class="btn btn-primary" type="submit">Continuar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "turnos/base_turnos.html" %}
+{% block content %}
+
+<div class="card shadow-sm border-0 rounded-4">
+  <div class="card-body p-4 p-md-5">
+    <h2 class="fw-black mb-1">Datos del titular</h2>
+    <p class="text-muted mb-4">Ingresá Documento</p>
+
+    <form method="post" class="needs-validation" novalidate>
+      {% csrf_token %}
+      <label class="form-label fw-semibold">{{ form.dni.label }}</label>
+
+      {{ form.dni }}
+
+      {% if form.dni.errors %}
+        <div class="text-danger mt-2">{{ form.dni.errors|striptags }}</div>
+      {% endif %}
+
+      {% if mostrar_datos and cliente %}
+        <div class="mt-4 p-3 rounded-4 border bg-light">
+          <h5 class="fw-bold mb-3">✅ Titular encontrado</h5>
+
+          <div class="row g-2">
+            <div class="col-md-6">
+              <div><strong>DNI:</strong> {{ cliente.dni_usuario|default:cliente.username }}</div>
+              <div><strong>Apellido:</strong> {{ cliente.last_name }}</div>
+              <div><strong>Nombre:</strong> {{ cliente.first_name }}</div>
+            </div>
+            <div class="col-md-6">
+              <div><strong>Domicilio:</strong> {{ cliente.domicilio_usuario|default:"-" }}</div>
+              <div><strong>Celular:</strong> {{ cliente.tel1_usuario|default:"-" }}</div>
+              <div><strong>Por favor controlar los datos es importante...!!!</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- es aqui que esta bien,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,-->
+
+          <div class="d-flex justify-content-end mt-4">
+           <a class="btn btn-outline-secondary btn-lg px-4"
+   href="{% url 'apps.blog_auth:editar_usuario_turnos' %}">
+  Modificar datos
+</a>
+
+            <button class="btn btn-success btn-lg px-4" type="submit" name="accion" value="continuar">
+              Continuar
+            </button>
+          </div>
+
+      {% else %}
+        <div class="d-flex justify-content-end mt-4">
+          <button class="btn btn-primary btn-lg px-4" type="submit" name="accion" value="aceptar">
+            Aceptar
+          </button>
+        </div>
+      {% endif %}
+
+    </form>
+  </div>
+</div>
+
+{% endblock %}

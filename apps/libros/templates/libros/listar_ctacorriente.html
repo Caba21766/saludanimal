@@ -13,36 +13,151 @@
 </header>
 
 <main>
+  
   {% if user.is_staff %}
-  <form method="GET" style="margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border: 1px solid #ccc; border-radius: 10px; display: flex; flex-wrap: wrap; gap: 15px; align-items: center;">
-    <div style="display: flex; flex-direction: column;">
-      <label for="dni_cliente" style="font-weight: bold; color: #0b2c4e;">Buscar por DNI:</label>
-      <input type="text" name="dni_cliente" id="dni_cliente"
-             value="{{ request.GET.dni_cliente|default_if_none:'' }}"
-             style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px;">
-    </div>
+<form method="GET"
+      action="{% url 'libros:listar_ctacorriente' %}"
+      id="form_filtro_cliente"
+      style="margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border: 1px solid #ccc; border-radius: 10px; display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end;">
 
-    <div style="display: flex; flex-direction: column;">
-      <label for="apellido_cliente" style="font-weight: bold; color: #0b2c4e;">Buscar por Apellido:</label>
-      <input type="text" name="apellido_cliente" id="apellido_cliente"
-             value="{{ request.GET.apellido_cliente|default_if_none:'' }}"
-             placeholder="Ej: Gómez"
-             style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px;">
-    </div>
+  <!-- Buscar por cliente (AJAX) -->
+  <div style="display:flex; flex-direction:column; position:relative;">
+    <label for="cliente_autocomplete" style="font-weight: bold; color: #0b2c4e;">
+      Buscar cliente:
+    </label>
 
-    <div style="display: flex; gap: 10px; margin-top: 22px;">
-      <button type="submit"
-              style="background-color: #0b2c4e; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
-        Filtrar
-      </button>
+    <input type="text"
+           id="cliente_autocomplete"
+           name="cliente_autocomplete"
+           value="{{ cliente_label|default:'' }}"
+           placeholder="Nombre o apellido..."
+           autocomplete="off"
+           style="width: 240px; padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px;">
 
-      <a href="{% url 'libros:listar_ctacorriente' %}"
-         style="display:inline-block; background-color:#6c757d; color:#fff; padding:8px 16px; border-radius:6px; text-decoration:none;">
-        Limpiar
-      </a>
-    </div>
-  </form>
-  {% endif %}
+    <!-- este es el que usa tu vista para filtrar -->
+    <input type="hidden"
+           id="dni_cliente"
+           name="dni_cliente"
+           value="{{ request.GET.dni_cliente|default:'' }}">
+
+    <ul id="sugerencias_cliente"
+        style="position:absolute; top: 100%; left:0; z-index: 999; width: 240px; display:none; background:white;
+               border:1px solid #ccc; border-radius: 8px; list-style:none; margin:4px 0 0; padding:0; max-height: 240px; overflow:auto;">
+    </ul>
+  </div>
+
+  <!-- Botones -->
+  <div style="display:flex; gap:10px;">
+    <button type="submit"
+            style="background-color: #0b2c4e; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+      Filtrar
+    </button>
+
+    <a href="{% url 'libros:listar_ctacorriente' %}"
+       style="display:inline-block; background-color:#6c757d; color:#fff; padding:8px 16px; border-radius:6px; text-decoration:none;">
+      Limpiar
+    </a>
+  </div>
+</form>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('form_filtro_cliente');
+  if (!form) return;
+
+  const input = document.getElementById('cliente_autocomplete');
+  const hiddenDni = document.getElementById('dni_cliente');
+  const sugerencias = document.getElementById('sugerencias_cliente');
+
+  let debounceTimer = null;
+  let controller = null;
+
+  const ocultar = () => (sugerencias.style.display = 'none');
+  const mostrar = () => (sugerencias.style.display = 'block');
+
+  input.addEventListener('input', function () {
+    const texto = this.value.trim();
+
+    // ✅ si escribe, invalida el DNI anterior
+    hiddenDni.value = '';
+
+    if (texto.length < 2) {
+      ocultar();
+      return;
+    }
+
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      if (controller) controller.abort();
+      controller = new AbortController();
+
+      fetch(`/modulo1/api/buscar-clientes/?q=${encodeURIComponent(texto)}`, {
+        signal: controller.signal
+      })
+      .then(r => r.json())
+      .then(data => {
+        sugerencias.innerHTML = '';
+
+        if (!Array.isArray(data) || data.length === 0) {
+          ocultar();
+          return;
+        }
+
+        data.forEach(cliente => {
+          const li = document.createElement('li');
+          li.textContent = `${cliente.first_name} ${cliente.last_name} (${cliente.dni_usuario})`;
+          li.style.padding = '8px 10px';
+          li.style.cursor = 'pointer';
+          li.style.borderBottom = '1px solid #eee';
+
+          li.addEventListener('mouseenter', () => li.style.background = '#f2f2f2');
+          li.addEventListener('mouseleave', () => li.style.background = 'white');
+
+          li.addEventListener('click', () => {
+            input.value = `${cliente.first_name} ${cliente.last_name}`;
+            hiddenDni.value = cliente.dni_usuario;
+            ocultar();
+            form.submit(); // ✅ submit GET con dni_cliente
+          });
+
+          sugerencias.appendChild(li);
+        });
+
+        mostrar();
+      })
+      .catch(err => {
+        if (err.name !== 'AbortError') console.error(err);
+        ocultar();
+      });
+    }, 250);
+  });
+
+  // ✅ si aprietan Enter sin elegir sugerencia, no filtra con dni vacío
+  form.addEventListener('submit', function (e) {
+    const txt = (input.value || '').trim();
+    if (txt && !hiddenDni.value) {
+      e.preventDefault();
+      ocultar();
+      alert('Elegí un cliente de la lista para filtrar.');
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!form.contains(e.target)) ocultar();
+  });
+});
+</script>
+
+
+
+
+
+
+
+
+
+
 
   {% if facturas %}
   <table border="1" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">

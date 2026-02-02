@@ -20,4 +20,6 @@ urlpatterns = [
     path('lista/', views.lista_usuarios, name='lista_usuarios'),
 
     path("usuarios/editar/<int:pk>/admin/", views.edit_usuario_admin, name="edit_usuario_admin"),
+    path("editar-desde-turnos/", views.editar_usuario_turnos, name="editar_usuario_turnos"),
+
 ]

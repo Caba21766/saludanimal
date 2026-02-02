@@ -1,15 +1,11 @@
 {% extends 'base.html' %}
 {% load static %}
-
 {% block titulo %}
 <title>Iniciar Sesión</title>
 {% endblock %}
-
 {% block navegacion %}
 {% include 'navegacion.html' %}
 {% endblock %}
-
-
 {% block contenido %}
 
 <style>
@@ -27,6 +23,13 @@
     <input type="text" name="ninjauser" style="display:none">
     <input type="password" name="ninjapass" style="display:none">
     {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger" role="alert">
+        {{ form.non_field_errors }}
+    </div>
+    {% endif %}
+
     <section style="min-height: 70vh; display: flex; justify-content: center; align-items: center; padding: 20px;" class="form4 cid-tf6M1H8RDD" id="form4-12">
         <div class="container">
             <div class="row content-wrapper justify-content-center align-items-center">
@@ -38,17 +41,17 @@
                         <!-- Botones de redes sociales -->
                         <div class="col-lg-12 text-center mb-3">
 
-                            <a href="https://www.reydelpollo.com.ar/invitado/" 
+                            <a href="{% url 'turnos:paso1_dni' %}"
                             class="btn btn-outline-secondary w-100 mb-2"
                             style="display: flex; align-items: center; justify-content: center; border: 1px solid #ddd; padding: 10px; text-decoration: none;"
                             target="_blank">
-                                <img src="{% static 'img/reydelpollo1.png' %}" alt="Google"
+                                <img src="{% static 'img/Salud2.png' %}" alt="Google"
                                     style="width: 40px; height: 40px; margin-right: 10px; border-radius: 50%;">
-                                <span class="texto-presupuesto">PRESUPUESTO</span>
+                                <span class="texto-presupuesto">Turnos</span>
                             </a>
 
 
-                            <a href="https://www.facebook.com/german.simek" 
+                            <a href="https://www.facebook.com/emilce.caballero1" 
                                 class="btn btn-primary w-100 mb-2"
                                 style="display: flex; align-items: center; justify-content: center; background-color: #4267B2; color: white; padding: 10px; border: 1px solid #ddd; transition: transform 0.2s ease; text-decoration: none;"
                                 target="_blank">
@@ -57,19 +60,22 @@
                                     Conéctate con Facebook
                                 </a>
                             
-                            <!-- <a href="https://instagram.com" target="_blank" class="btn btn-info w-100 mb-3"
+                            <a href="https://www.instagram.com/emi22_22/" target="_blank" class="btn btn-info w-100 mb-3"
                             style="display: flex; align-items: center; justify-content: center; background-color: #1DA1F2; color: white; padding: 10px; border: 1px solid #ddd; transition: transform 0.2s ease; text-decoration: none;">
                                 <img src="{% static 'img/instagran.jpg' %}" alt="Instagram"
                                     style="width: 20px; height: 20px; margin-right: 10px; border-radius: 50%;">
                                 Conéctate con Instagram
-                            </a> -->
+                            </a>
                         </div>
                         
 
                         <!-- Campos del formulario -->
                         <div class="col-lg-12 mb-3">
-                            <label for="fakeuser">DNI Usuario:</label>
+                            <label for="dni">DNI Usuario:</label>
                             {{ form.username }}
+                                {% if form.username.errors %}
+                                <div class="text-danger small mt-1">{{ form.username.errors|striptags }}</div>
+                                {% endif %}
                         </div>
                         
                         <div class="col-lg-12 mb-3">
@@ -85,13 +91,7 @@
                         <!--<div class="col-lg-12 text-end mb-3">
                             <a href="{% url 'apps.blog_auth:pedir_con' %}" style="font-size: 0.9rem; color: #007bff; text-decoration: none;">Quiero Contraseña</a>
                         </div>-->
-                                <script>
-                                    document.addEventListener("DOMContentLoaded", function() {
-                                    // Restaurar los name originales para que Django los procese
-                                    document.getElementById('fakeuser').setAttribute('name', 'username');
-                                    document.getElementById('fakepass').setAttribute('name', 'password');
-                                    });
-                                </script>
+                               
 
                         <!-- Botón de iniciar sesión -->
                         <div class="col-lg-12">

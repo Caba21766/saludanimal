@@ -167,6 +167,11 @@ class EditarUsuarioForm(forms.ModelForm):
 # -------------------- LOGIN POR DNI --------------------
 class CustomLoginForm(AuthenticationForm):
     # Mantiene name="username" por compatibilidad, pero se rotula como DNI.
+    error_messages = {
+            "invalid_login": "⚠️ DNI o contraseña incorrectos.",
+            "inactive": "⚠️ Esta cuenta está desactivada.",
+        }
+
     username = forms.CharField(
         label="DNI",
         widget=forms.TextInput(attrs={

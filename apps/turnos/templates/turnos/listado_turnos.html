@@ -1,0 +1,114 @@
+{% extends "turnos/base_turnos.html" %}
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h2 class="m-0">Listado de turnos</h2>
+  <span class="text-muted small">Total: {{ turnos|length }}</span>
+</div>
+
+<form method="get" class="row g-2 mb-3">
+  <div class="col-12 col-md-4">
+    <input name="q" value="{{ q }}" class="form-control" placeholder="Buscar por DNI, motivo u celular">
+  </div>
+
+  <div class="col-6 col-md-2">
+    <select name="estado" class="form-select">
+      <option value="">Estado (todos)</option>
+      {% for e in estados %}
+        <option value="{{ e }}" {% if estado == e %}selected{% endif %}>{{ e }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="col-6 col-md-2">
+    <input type="date" name="desde" value="{{ desde }}" class="form-control" title="Desde">
+  </div>
+
+  <div class="col-6 col-md-2">
+    <input type="date" name="hasta" value="{{ hasta }}" class="form-control" title="Hasta">
+  </div>
+
+  <div class="col-6 col-md-2 d-grid">
+    <button class="btn btn-primary">Filtrar</button>
+  </div>
+</form>
+
+<div class="table-responsive">
+  <table class="table table-hover align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>DNI</th>
+        <th>Motivo</th>
+        <th>Apellido</th>
+        <th>Nombre</th>
+        <th>Celular</th>
+        <th>Fecha</th>
+        <th>Hora</th>
+        <th>Estado</th>
+        <th>Importe</th>
+      </tr>
+    </thead>
+
+    <tbody>
+  {% for t in turnos %}
+    <tr>
+      <td class="fw-semibold">{{ t.dni }}</td>
+
+      <td>{{ t.motivo.nombre }}</td>
+
+      <td>{{ t.apellido }}</td>
+      <td>{{ t.nombre }}</td>
+      <td>{{ t.celular }}</td>
+      <td>{{ t.fecha|date:"d/m/Y" }}</td>
+      <td>{{ t.hora|time:"H:i" }}</td>
+
+      <td>
+        <form method="post"
+        action="{% url 'turnos:cambiar_estado' t.id %}"
+        class="d-flex align-items-center gap-2 flex-nowrap m-0">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+
+          <select name="estado"
+                  class="form-select form-select-sm"
+                  style="width: 140px;"
+                  onchange="this.form.submit()">
+            {% for e in estados %}
+              <option value="{{ e }}" {% if t.estado == e %}selected{% endif %}>{{ e }}</option>
+            {% endfor %}
+          </select>
+
+          {% if t.estado == "RESERVADO" %}
+            <span class="badge bg-success">Reservado</span>
+          {% elif t.estado == "CANCELADO" %}
+            <span class="badge bg-danger">Cancelado</span>
+          {% else %}
+            <span class="badge bg-secondary">Atendido</span>
+          {% endif %}
+        </form>
+      </td>
+      
+
+      <td class="fw-bold">
+        $ {{ t.motivo.precio|default:0 }}
+      </td>
+    </tr>
+  {% empty %}
+    <tr>
+      <td colspan="10" class="text-center text-muted py-4">
+        No hay turnos con esos filtros.
+      </td>
+    </tr>
+  {% endfor %}
+</tbody>
+
+  </table>
+</div>
+<div class="d-flex justify-content-end mt-3">
+  <div class="p-3 rounded-3 border bg-light">
+    <span class="text-muted me-2">Total importe:</span>
+    <span class="fw-bold fs-5 text-dark">$ {{ total_importe|floatformat:2 }}</span>
+  </div>
+</div>
+
+{% endblock %}

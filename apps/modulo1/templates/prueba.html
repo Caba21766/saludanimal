@@ -217,7 +217,7 @@
             <p style="margin: 0;">Vendedor: {{ vendedor }}</p>
         </div>
         <div>
-            <img src="{% static 'img/reydelpollo1.png' %}" alt="Logo" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; margin-top: 10px;">
+            <img src="{% static 'img/Salud4.png' %}" alt="Logo" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; margin-top: 10px;">
         </div>
     </div>
     <hr>
@@ -521,7 +521,7 @@
                 <td style="text-align: center; padding-top: 10px;">
                     <!-- dejo tu onclick como estaba para no romper nada -->
                     <button type="button" id="guardar" class="btn btn-primary btn-sm me-1" style="font-size: 9px;">
-                        Aceptar1
+                        Aceptar
                     </button>
                 </td>
             </tr>
@@ -664,7 +664,11 @@
             const cellEliminar = document.createElement('td');
 
             cellNumero.textContent = data.numero_producto ? data.numero_producto : 'N/A';
-            cellNombre.textContent = data.nombre_producto ? data.nombre_producto : 'N/A';
+            const inputNombre = document.createElement('input');
+            inputNombre.type = 'text';
+            inputNombre.className = 'form-control';
+            inputNombre.value = data.nombre_producto || '';
+            cellNombre.appendChild(inputNombre);
 
             const precioUnitario = parseFloat(data.precio) || 0;
 
@@ -1027,7 +1031,10 @@
         const detalleProductos = [];
         document.querySelectorAll('#producto-info tr').forEach(row => {
             const numeroProducto = row.cells[0]?.textContent || '';
-            const nombreProducto = row.cells[1]?.textContent || '';
+
+            const nombreProducto = row.cells[1]?.querySelector('input')?.value.trim() || '';
+
+
             const cantidadVendida = parseFloat(row.cells[2]?.querySelector('input')?.value || 0);
             const precioUnitario = parseFloat(row.cells[3]?.querySelector('input')?.value || 0);
             const subtotal = parseFloat(row.cells[4]?.querySelector('input')?.value || 0);

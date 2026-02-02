@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mis turnos</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container py-5">
+  {% if messages %}
+    {% for m in messages %}
+      <div class="alert alert-{{ m.tags }}">{% if m %}{{ m }}{% endif %}</div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="card shadow-sm">
+    <div class="card-body p-4">
+      <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+        <div>
+          <h3 class="mb-1">Turnos reservados</h3>
+          <div class="text-muted">DNI/CUIL: <b>{{ dni }}</b></div>
+        </div>
+
+       <a href="{% url 'turnos:cancelar_lista' %}" class="btn btn-outline-secondary btn-sm">
+        Mis turnos
+      </a>
+
+
+      </div>
+
+      <hr class="my-4">
+
+      {% if not turnos %}
+        <div class="alert alert-info mb-0">
+          No tenés turnos en estado <b>RESERVADO</b>.
+        </div>
+      {% else %}
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Motivo</th>
+                <th>Oficina</th>
+                <th class="text-end"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for t in turnos %}
+                <tr>
+                  <td>{{ t.fecha }}</td>
+                  <td>{{ t.hora }}</td>
+                  <td>{{ t.motivo.nombre }}</td>
+                  <td>{% if t.oficina %}{{ t.oficina.nombre }}{% else %}-{% endif %}</td>
+                  <td class="text-end">
+                    <a class="btn btn-outline-danger btn-sm"
+                       href="{% url 'turnos:cancelar_confirmar' t.id %}">
+                      Cancelar
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+
+      <div class="text-end mt-3">
+        <a href="{% url 'turnos:paso1_dni' %}" class="btn btn-primary">Volver al sistema</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

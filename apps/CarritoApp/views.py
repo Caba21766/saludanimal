@@ -469,7 +469,8 @@ def limpiar_carrito(request):
 
 #----------------- ----TIENDA aqui enumera la factura-------------/views.py --
 from datetime import datetime
-from .models import Factura, Producto, Categ_producto
+#from .models import Factura, Producto, Categ_producto
+from apps.CarritoApp.models import Factura, Producto, Categ_producto
 from django.shortcuts import render
 from django.core.paginator import Paginator
 
@@ -657,11 +658,21 @@ def confirmar_pago(request):
 
 
 #-------------Listar factura es del listado de facturas---------------------
-
+#----------------lista_cierre_de_caja-------------------------------------
 from django.db.models import Sum, Value, Case, When, CharField, F, ExpressionWrapper, DecimalField, Q
 from django.db.models.functions import Trim, Lower
 from django.shortcuts import render
 from apps.CarritoApp.models import Factura, MetodoPago, CuentaCorriente
+
+from django.contrib.admin.views.decorators import staff_member_required
+from django.db.models import OuterRef, Subquery
+from django.db.models.functions import Coalesce
+from django.contrib.auth import get_user_model
+from django.core.paginator import Paginator
+
+from apps.turnos.models import Turno
+from django.core.exceptions import FieldError
+from django.db.models.functions import Cast
 
 def lista_cierre_de_caja(request):
     facturas = Factura.objects.all().order_by('-fecha', '-numero_factura')
@@ -808,6 +819,8 @@ def lista_cierre_de_caja(request):
     )['total'] or 0
 
 
+   
+
     # ---------------------------------------------------------------------
     # 👇 NUEVO: Unificar facturas + pagos en "movimientos" y ordenar por fecha
     movimientos = []
@@ -867,10 +880,63 @@ def lista_cierre_de_caja(request):
             'orden': 1,
         })
 
+
+
     # Ordenar por fecha desc y, dentro del mismo día, por 'orden'
     # (reverse=True -> fechas más nuevas primero; y 1 > 0: pagos se muestran antes que facturas si ponés pago=1)
     movimientos.sort(key=lambda x: (x['fecha'], x['orden']), reverse=True)
     # ---------------------------------------------------------------------
+    # ---------------------------------------------------------------------
+
+    # ==========================
+    # ✅ TURNOS FILTRADOS POR FECHA
+    # ==========================
+    turnos_qs = Turno.objects.all()
+
+    if fecha_desde:
+        turnos_qs = turnos_qs.filter(fecha__gte=fecha_desde)
+    if fecha_hasta:
+        turnos_qs = turnos_qs.filter(fecha__lte=fecha_hasta)
+
+    turnos_qs = turnos_qs.order_by('-fecha', '-hora')
+
+
+    # ==========================
+# ✅ TOTAL PRECIO DE TURNOS (con filtro)
+# ==========================
+    try:
+        total_importe = turnos_qs.aggregate(
+            total=Coalesce(
+                Sum('precio'),
+                Value(0),
+                output_field=DecimalField(max_digits=12, decimal_places=2)
+            )
+        )['total']
+
+    except FieldError:
+        try:
+            total_importe = turnos_qs.aggregate(
+                total=Coalesce(
+                    Sum(Cast('precio', DecimalField(max_digits=12, decimal_places=2))),
+                    Value(0)
+                )
+            )['total']
+        except FieldError:
+            total_importe = turnos_qs.aggregate(
+                total=Coalesce(
+                    Sum('motivo__precio'),
+                    Value(0),
+                    output_field=DecimalField(max_digits=12, decimal_places=2)
+                )
+            )['total']
+
+    # ==========================
+    # ✅ LISTADO DE TURNOS (para mostrar abajo)
+    # ==========================
+    #turnos_qs = Turno.objects.all().order_by('-fecha', '-hora')
+    # ---------------------------------------------------------------------
+    # ---------------------------------------------------------------------
+
 
     return render(request, 'CarritoApp/lista_cierre_de_caja.html', {
         'facturas': facturas,
@@ -893,9 +959,12 @@ def lista_cierre_de_caja(request):
         'movimientos': movimientos,  # ✅ CONTEXTO: lo qu
         'resumen_metodos': resumen_metodos,
         'cobro_cta_corriente': cobro_cta_corriente,
+        'total_importe': total_importe,  # ✅ ESTA ES LA CLAVE
+        'turnos': turnos_qs,
+        
     })
 
-
+    
 #--------------------- apps/CarritoApp/views.py
 from django.shortcuts import redirect, get_object_or_404
 from django.views.decorators.http import require_POST
@@ -1217,8 +1286,6 @@ from django.urls import reverse          # << necesario para fallback
 from django.contrib import messages       # << necesario para messages
 from django.core.files.base import ContentFile
 
-
-
 # ---------- Formulario ----------
 class SubirImagenFacturaForm(forms.ModelForm):
     class Meta:
@@ -1454,15 +1521,11 @@ def actualizar_precios(request):
 
 #---------------------ver carrito-------------------#
 from datetime import date
-from django.shortcuts import render, redirect
-from django.contrib import messages
+from django.shortcuts import render
 from .models import Factura, TipoPago
 
 def ver_carrito(request):
-    if not request.user.is_authenticated:
-        messages.error(request, "Debes iniciar sesión o registrarte para agregar productos al carrito.")
-        return redirect('tienda')
-
+    # ✅ NO exigir login para ver el carrito
     carrito = request.session.get('carrito', {})
     total_carrito = 0
 
@@ -1471,23 +1534,24 @@ def ver_carrito(request):
         total_carrito += value['importe']
 
     ultima_factura = Factura.objects.last()
-    if ultima_factura and ultima_factura.numero_factura.isdigit():
+    if ultima_factura and str(ultima_factura.numero_factura).isdigit():
         numero_factura = str(int(ultima_factura.numero_factura) + 1).zfill(5)
     else:
         numero_factura = "00001"
 
     fecha_actual = date.today()
 
+    # ✅ Datos de usuario (si está logueado muestra nombre real; si no, marca anónimo)
     if request.user.is_authenticated:
-        nombre_usuario = request.user.first_name
-        apellido_usuario = request.user.last_name
+        nombre_usuario = request.user.first_name or ""
+        apellido_usuario = request.user.last_name or ""
         usuario_no_registrado = False
     else:
-        nombre_usuario = "Desconocido"
-        apellido_usuario = "Usuario"
+        nombre_usuario = "Invitado"
+        apellido_usuario = ""
         usuario_no_registrado = True
 
-    # ✅ Traer los métodos de pago desde la base
+    # ✅ Traer métodos de pago
     tipos_pago = TipoPago.objects.all()
 
     return render(request, 'carrito.html', {
@@ -1498,20 +1562,40 @@ def ver_carrito(request):
         'nombre_usuario': nombre_usuario,
         'apellido_usuario': apellido_usuario,
         'usuario_no_registrado': usuario_no_registrado,
-        'tipos_pago': tipos_pago,  # ← lo pasás a la plantilla
+        'tipos_pago': tipos_pago,
     })
 
 
 #---------------------- REPAGINAR-------------------------------------------
 
 from django.core.paginator import Paginator
+from django.shortcuts import render
+from .models import Producto, Categ_producto  # se llama distinto, cambiá esto
 
 def vista_productos(request):
-    productos = Producto.objects.all()  # Obtén los productos
-    paginator = Paginator(productos, 6)  # 6 productos por página (3 columnas x 2 filas)
-    page_number = request.GET.get('page')  # Obtiene el número de página de la solicitud
-    page_obj = paginator.get_page(page_number)  # Obtén los productos de la página actual
-    return render(request, 'tu_plantilla.html', {'page_obj': page_obj})
+    categoria_id = request.GET.get("categoria", "")
+
+    # queryset base
+    productos = Producto.objects.all().order_by("-id")
+
+    # filtro por categoría (si viene)
+    if str(categoria_id).isdigit():
+        productos = productos.filter(categoria_id=int(categoria_id))
+
+    # paginación
+    paginator = Paginator(productos, 6)  # 6 por página como querías
+    page_number = request.GET.get("page", 1)
+    productos_pagina = paginator.get_page(page_number)
+
+    # categorías para el select
+    categorias = Categ_producto.objects.all().order_by("nombre")
+    categoria_seleccionada = int(categoria_id) if str(categoria_id).isdigit() else None
+
+    return render(request, "tienda.html", {
+        "productos_pagina": productos_pagina,
+        "categorias": categorias,
+        "categoria_seleccionada": categoria_seleccionada,
+    })
 
 #---------------------- BALANCE TOTAL-------------------------------------------
 

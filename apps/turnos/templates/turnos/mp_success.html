@@ -1,0 +1,11 @@
+{% extends "turnos/base_turnos.html" %}
+{% block content %}
+<div class="card p-4">
+  {% if approved %}
+    <h3 class="text-success">Pago aprobado ✅</h3>
+  {% else %}
+    <h3 class="text-warning">Pago pendiente ⏳</h3>
+  {% endif %}
+  <p>Turno #{{ turno.id }}</p>
+</div>
+{% endblock %}

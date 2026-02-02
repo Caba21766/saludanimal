@@ -1,0 +1,25 @@
+
+{% extends "turnos/base_turnos.html" %}
+{% block content %}
+<div class="card shadow-sm border-0 rounded-4">
+  <div class="card-body p-4 p-md-5 text-center">
+    <h2 class="fw-black text-success mb-2">¡Turno confirmado!</h2>
+    <p class="text-muted mb-4">Se guardó correctamente en la base de datos.</p>
+
+    <div class="p-3 rounded-4 bg-white border text-start mx-auto" style="max-width:520px;">
+      <div class="small text-muted">Código</div>
+      <div class="fw-bold">{{ turno.id }}</div>
+      <hr>
+      <div><b>DNI/CUIL:</b> {{ turno.dni }}</div>
+      <div><b>Motivo:</b> {{ turno.motivo.nombre }}</div>
+      {% if turno.oficina %}<div><b>Oficina:</b> {{ turno.oficina.nombre }}</div>{% endif %}
+      <div><b>Fecha:</b> {{ turno.fecha }}</div>
+      <div><b>Hora:</b> {{ turno.hora|time:"H:i" }}</div>
+    </div>
+
+    <div class="mt-4">
+      <a class="btn btn-primary" href="{% url 'turnos:paso1_dni' %}">Sacar otro turno</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

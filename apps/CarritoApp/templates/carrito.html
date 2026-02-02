@@ -6,19 +6,20 @@
 {% endblock %}
 
 {% block contenido %}
-<body class="bg-light">
+<div class="bg-light">
     <div class="container my-5">
+
         <!-- Información de la factura -->
         <div class="card mb-4 shadow-sm border-0">
             <div class="card-body">
                 <div class="row align-items-center">
                     <div class="col-md-3 text-center mb-3 mb-md-0">
-                        <img src="{% static 'img/reydelpollo1.png' %}" alt="Logo"
+                        <img src="{% static 'img/Salud4.png' %}" alt="Logo"
                             style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover;">
                     </div>
 
                     <div class="col-md-9">
-                        <h1 class="text-success fw-bold mb-2">Rey del pollo</h1>
+                        <h1 class="text-success fw-bold mb-2">Mundo animal</h1>
                         <hr style="margin-top: 0.2rem; margin-bottom: 1rem; border-color: #ccc;">
                         <p class="mb-1" style="font-size: 1.4rem; font-weight: bold;">
                             <strong>Factura:</strong> <span class="text-dark">{{ numero_factura }}</span>
@@ -85,62 +86,112 @@
         </div>
     </div>
 
-    <!-- ✅ Modal Método de Pago (SOLO EFECTIVO) -->
-    <div class="modal fade" id="metodoPagoModal" tabindex="-1" aria-labelledby="metodoPagoModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
+<!-- ✅ Modal Método de Pago (DINÁMICO + MP) -->
+<div class="modal fade" id="metodoPagoModal" tabindex="-1" aria-labelledby="metodoPagoModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
 
-                <div class="modal-header">
-                    <h5 class="modal-title" id="metodoPagoModalLabel" style="color: #2e7d32; font-weight: bold;">
-                        Seleccione Pago
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
+      <div class="modal-header">
+        <h5 class="modal-title" id="metodoPagoModalLabel" style="color:#2e7d32;font-weight:bold;">
+          Seleccione Pago
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
 
-                <form id="formulario_pago" method="POST" action="">
-                    {% csrf_token %}
+      <form id="formulario_pago" method="POST" action="">
+        {% csrf_token %}
 
-                    <div class="modal-body">
+        <div class="modal-body">
 
-                        <div class="alert alert-success p-2 small" role="alert" style="line-height: 1.2;">
-                            <strong class="text-success">🔒 PAGO SEGURO</strong><br>
-                            Rey del Pollo nunca le está solicitando información de cuentas o pagos por fuera de esta plataforma.
-                        </div>
+          <div class="alert alert-success p-2 small" role="alert" style="line-height:1.2;">
+            <strong class="text-success">🔒 PAGO SEGURO</strong><br>
+            Rey del Pollo nunca le está solicitando información de cuentas o pagos por fuera de esta plataforma.
+          </div>
 
-                        <!-- ✅ ÚNICA OPCIÓN -->
-                        <div class="col-md-12 border p-2 rounded d-flex justify-content-between align-items-center"
-                             style="line-height: 1.2; font-size: 0.9rem;">
-                            <div>
-                                <input
-                                    type="radio"
-                                    name="metodo_pago"
-                                    value="Efectivo"
-                                    data-nombre="Efectivo"
-                                    class="form-check-input me-2"
-                                    required
-                                >
-                                <strong>✅ Efectivo</strong><br>
-                                <div class="text-muted">Pago en caja / mostrador</div>
-                            </div>
-                            <img src="{% static 'img/efectivo.png' %}"
-                                 alt="Efectivo"
-                                 style="width: 50px; height: 50px; object-fit: contain;"
-                                 onerror="this.style.display='none'">
-                        </div>
-
-                        <hr class="my-3">
-
-                    </div>
-
-                    <div class="modal-footer py-2">
-                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-primary btn-sm" onclick="procesarPago()">Pagar</button>
-                    </div>
-                </form>
-
+          <!-- ✅ OPCIÓN EFECTIVO (como en tu código que anda) -->
+          <div class="col-12 border p-2 rounded d-flex justify-content-between align-items-center mb-2"
+               style="line-height:1.2;font-size:.9rem;">
+            <div>
+              <input
+                type="radio"
+                name="metodo_pago"
+                value="Efectivo"
+                data-nombre="Efectivo"
+                class="form-check-input me-2"
+                required
+              >
+              <strong>✅ Efectivo</strong><br>
+              <div class="text-muted">Pago en caja / mostrador</div>
             </div>
+            <img src="{% static 'img/efectivo.png' %}"
+                 alt="Efectivo"
+                 style="width:50px;height:50px;object-fit:contain;"
+                 onerror="this.style.display='none'">
+          </div>
+
+          <!-- ✅ MÉTODOS DINÁMICOS (alias / cbu / logo) -->
+          {% if tipos_pago %}
+            <div class="row g-2">
+              {% for tipo in tipos_pago %}
+                <div class="col-12 border p-2 rounded d-flex justify-content-between align-items-center"
+                     style="line-height:1.2;font-size:.9rem;">
+                  <div>
+                    <input
+                      type="radio"
+                      name="metodo_pago"
+                      value="{{ tipo.id }}"
+                      data-nombre="{{ tipo.tipo_pago }}"
+                      class="form-check-input me-2"
+                      required
+                    >
+                    <strong>{{ tipo.tipo_pago }}</strong><br>
+
+                    {% if tipo.alias %}
+                      <div>Alias: <strong>{{ tipo.alias }}</strong></div>
+                    {% endif %}
+                    {% if tipo.cbu %}
+                      <div>CBU: <strong>{{ tipo.cbu }}</strong></div>
+                    {% endif %}
+                  </div>
+
+                  {% if tipo.tipo_logo %}
+                    <img src="{{ tipo.tipo_logo.url }}"
+                         alt="Logo {{ tipo.tipo_pago }}"
+                         style="width:50px;height:50px;object-fit:contain;"
+                         onerror="this.style.display='none'">
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          <hr class="my-3">
+
+          <!-- ✅ Botón Mercado Pago -->
+          <div class="text-center mt-3">
+            <a href="{% url 'CarritoApp:mp_checkout' %}">
+              <img src="{% static 'img/mercadopago.webp' %}"
+                   alt="Pagar con Mercado Pago"
+                   style="width:200px;height:auto;cursor:pointer;">
+            </a>
+          </div>
+
         </div>
+
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="procesarPago()">Continuar</button>
+        </div>
+      </form>
+
     </div>
+  </div>
+</div>
+
+
+
+
+
 
     <!-- ✅ Modal Ticket -->
     <div class="modal fade" id="creditoModal" tabindex="-1" aria-labelledby="creditoModalLabel" aria-hidden="true">
@@ -170,67 +221,84 @@
         </div>
     </div>
 
-    <script>
-        function verificarCarrito() {
-            const total = parseFloat("{{ total_carrito|default:'0'|safe }}");
-            const cantidadProductos = parseInt("{{ carrito|length|default:'0'|safe }}");
-            if (cantidadProductos === 0 || total === 0) {
-                alert("No puedes generar una factura porque el carrito está vacío.");
-                return;
-            }
-            new bootstrap.Modal(document.getElementById('metodoPagoModal')).show();
-        }
+    
+<script>
+  function verificarCarrito() {
+    const total = parseFloat("{{ total_carrito|default:'0'|safe }}");
+    const cantidadProductos = parseInt("{{ carrito|length|default:'0'|safe }}");
 
-        function procesarPago() {
-            const metodoSeleccionado = document.querySelector('input[name="metodo_pago"]:checked');
+    if (cantidadProductos === 0 || total === 0) {
+      alert("No puedes generar una factura porque el carrito está vacío.");
+      return;
+    }
 
-            if (!metodoSeleccionado) {
-                alert("Por favor selecciona un método de pago.");
-                return;
-            }
+    new bootstrap.Modal(document.getElementById('metodoPagoModal')).show();
+  }
 
-            // Mostrar nombre lindo en resumen
-            const nombre = metodoSeleccionado.dataset.nombre || metodoSeleccionado.value;
-            document.getElementById("tipo_pago_resumen").textContent = nombre;
+  function procesarPago() {
+    const metodoSeleccionado = document.querySelector('input[name="metodo_pago"]:checked');
 
-            // Cerrar modal método pago y abrir ticket
-            const modalMetodoEl = document.getElementById('metodoPagoModal');
-            const modalMetodo = bootstrap.Modal.getInstance(modalMetodoEl);
-            if (modalMetodo) modalMetodo.hide();
+    if (!metodoSeleccionado) {
+      alert("Por favor selecciona un método de pago.");
+      return;
+    }
 
-            new bootstrap.Modal(document.getElementById('creditoModal')).show();
-        }
+    const form = document.getElementById("formulario_pago");
 
-        function enviarFormularioConTicket() {
-        const ticket = document.getElementById("numero_tiket").value.trim();
-        const form = document.getElementById("formulario_pago");
+    // ✅ nombre para mostrar en el resumen
+    const nombreLindo = metodoSeleccionado.dataset.nombre || metodoSeleccionado.value;
+    document.getElementById("tipo_pago_resumen").textContent = nombreLindo;
 
-        // ✅ si antes ya se había agregado un hidden, lo borramos
-        const prev = form.querySelector('input[name="numero_tiket"]');
-        if (prev) prev.remove();
+    // ✅ asegurar que el método de pago SIEMPRE se envía (por las dudas)
+    const prevMetodo = form.querySelector('input[name="metodo_pago_hidden"]');
+    if (prevMetodo) prevMetodo.remove();
 
-        // ✅ SOLO si escribió algo, lo mandamos
-        if (ticket) {
-            const ticketInput = document.createElement("input");
-            ticketInput.type = "hidden";
-            ticketInput.name = "numero_tiket";
-            ticketInput.value = ticket;
-            form.appendChild(ticketInput);
-        }
+    const metodoHidden = document.createElement("input");
+    metodoHidden.type = "hidden";
+    metodoHidden.name = "metodo_pago_hidden"; // <- lo lees en backend si querés
+    metodoHidden.value = metodoSeleccionado.value; // puede ser "Efectivo" o "3"
+    form.appendChild(metodoHidden);
 
-        // ✅ Guardar efectivo (misma lógica que tu flujo actual)
-        const usuario = "{{ request.user.username|escapejs }}";
-        const esInvitado = (usuario === "invitado_whatsapp");
+    // ✅ cerrar modal de método y abrir modal ticket
+    const modalMetodoEl = document.getElementById('metodoPagoModal');
+    const modalMetodo = bootstrap.Modal.getInstance(modalMetodoEl);
+    if (modalMetodo) modalMetodo.hide();
 
-        form.action = esInvitado
-            ? "{% url 'CarritoApp:imprimir_factura_invitado' %}"
-            : "{% url 'CarritoApp:guardar_efectivo' %}";
+    new bootstrap.Modal(document.getElementById('creditoModal')).show();
+  }
 
-        form.submit();
-        }
+  function enviarFormularioConTicket() {
+    const ticket = document.getElementById("numero_tiket").value.trim();
+    const form = document.getElementById("formulario_pago");
 
-    </script>
+    // ✅ si antes ya se había agregado un hidden, lo borramos
+    const prevTicket = form.querySelector('input[name="numero_tiket"]');
+    if (prevTicket) prevTicket.remove();
+
+    // ✅ SOLO si escribió algo, lo mandamos
+    if (ticket) {
+      const ticketInput = document.createElement("input");
+      ticketInput.type = "hidden";
+      ticketInput.name = "numero_tiket";
+      ticketInput.value = ticket;
+      form.appendChild(ticketInput);
+    }
+
+    // ✅ Guardar efectivo / invitado (misma lógica que tu flujo actual)
+    const usuario = "{{ request.user.username|escapejs }}";
+    const esInvitado = (usuario === "invitado_whatsapp");
+
+    form.action = esInvitado
+      ? "{% url 'CarritoApp:imprimir_factura_invitado' %}"
+      : "{% url 'CarritoApp:guardar_efectivo' %}";
+
+    form.submit();
+  }
+</script>
+
+
+
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+</div>
 {% endblock %}

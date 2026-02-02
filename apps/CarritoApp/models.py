@@ -115,7 +115,9 @@ class Factura(models.Model):
     imagen_factura = models.ImageField(upload_to='factura_images/', null=True, blank=True)
     #---------------------------------------------------------------#
     dni_cliente = models.CharField(max_length=20, null=True, blank=True)
+    
     vendedor = models.CharField(max_length=100, default='Sin asignar')
+
     descuento = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
     total_descuento = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     estado_credito = models.CharField(max_length=50, default='Cuenta Corriente')

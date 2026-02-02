@@ -1,0 +1,34 @@
+{% extends "turnos/base_turnos.html" %}
+{% block content %}
+<div class="card shadow-sm border-0 rounded-4">
+  <div class="card-body p-4 p-md-5">
+    <h2 class="fw-black mb-1">Seleccioná un día</h2>
+    <p class="text-muted mb-4">Se habilitan solo los días que tengan algún horario libre.</p>
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="row g-2">
+        {% for d in dias_info %}
+          <div class="col-6 col-md-3 col-lg-2">
+            <button
+              class="btn w-100 {% if d.habilitado %}btn-outline-dark{% else %}btn-outline-secondary{% endif %}"
+              type="submit"
+              name="fecha"
+              value="{{ d.fecha|date:'Y-m-d' }}"
+              {% if not d.habilitado %}disabled{% endif %}
+              style="border-radius:14px; padding:14px 10px;">
+              <div class="fw-bold">{{ d.fecha|date:"D"|upper }}</div>
+              <div class="small text-muted">{{ d.fecha|date:"d M" }}</div>
+            </button>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="d-flex justify-content-between mt-4">
+        <a class="btn btn-outline-secondary" href="{% url 'turnos:paso2_motivo' %}">Anterior</a>
+
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

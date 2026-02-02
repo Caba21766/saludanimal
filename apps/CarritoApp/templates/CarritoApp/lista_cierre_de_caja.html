@@ -113,6 +113,8 @@
     </div>
 </div>
 
+
+
 <!-- Tabla de facturas -->
 <!-- Tabla unificada -->
 {% if movimientos %}
@@ -142,6 +144,7 @@
         <tr class="sep-fecha">
           <td colspan="13">{{ m.fecha|date:"d/m/Y" }}</td>
         </tr>
+      
         {% endifchanged %}
         <!-- Tabla de facturas -->  
         <!-- Tabla de facturas -->  
@@ -152,7 +155,7 @@
             <td>{{ m.fecha|date:"d/m/Y" }}</td>
             <td>{{ m.dni }}</td>
             <td>{{ m.cliente }}</td>
-            <td>{{ m.vendedor }}</td>
+           <td>{{ m.vendedor|default:"-" }}</td>
             <td>
               {% if m.metodo == "Cuenta Corriente" %}
                 <span class="text-danger fw-bold">{{ m.metodo }}</span>
@@ -235,9 +238,12 @@
               </div>
             </td>
           </tr>
-        <!-- cunta correinte pago  -->  
-        <!-- cunta correinte pago  -->  
-        <!-- cunta correinte pago  -->  
+        
+        <!-- cuenta corriente pago  -->  
+        <!-- cuenta corriente pago  -->  
+        <!-- cuenta corriente pago  -->  
+        
+        
         {% else %} {# m.tipo == 'pago' #}
           <tr class="table-success">
             <td>{{ m.numero }}</td>
@@ -307,6 +313,7 @@
   <p class="text-center text-muted">No hay movimientos con los filtros seleccionados.</p>
 {% endif %}
 <hr>
+
 <!-- ================== Resumen por método de pago ================== -->
 <div class="card shadow-sm mt-4">
   <div class="card-header bg-dark text-white">
@@ -336,6 +343,13 @@
             <td>Cuenta Corriente (cobrado)</td>
             <td class="text-end">${{ cobro_cta_corriente|floatformat:2 }}</td>
           </tr>
+
+          <!-- Línea aparte para lo precio turno -->
+          <tr class="table-warning">
+            <td>Precio suma total de Turnos</td>
+            <td class="text-end">$ {{ total_importe }}</td>
+          </tr>
+
         </tbody>
       </table>
     </div>
@@ -354,10 +368,31 @@
     bsModal.show();
   });
 
-  document.getElementById('facturaModal').addEventListener('hidden.bs.modal', function () {
-    document.getElementById('facturaModalImg').src = '';
+</script>  
+  
+
+<script>
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('.view-factura');
+    if (!btn) return;
+
+    const modalEl = document.getElementById('facturaModal');
+    const img = document.getElementById('facturaModalImg');
+    if (!modalEl || !img) return;
+
+    img.src = btn.getAttribute('data-src') || '';
+    bootstrap.Modal.getOrCreateInstance(modalEl).show();
   });
+
+  const modalEl = document.getElementById('facturaModal');
+  if (modalEl) {
+    modalEl.addEventListener('hidden.bs.modal', function () {
+      const img = document.getElementById('facturaModalImg');
+      if (img) img.src = '';
+    });
+  }
 </script>
+
 
 <div class="modal fade" id="facturaModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -377,8 +412,63 @@
 </div>
 
 
+<hr class="my-4">
+<div class="card shadow-sm mt-4">
+  <div class="card-header bg-dark text-white">
+    Listado de Turnos
+  </div>
+
+  <div class="card-body p-0">
+    <div class="table-responsive shadow-sm rounded bg-light p-3">
+      <table class="table table-striped table-hover align-middle tabla-facturas">
+        <thead class="table-dark">
+          <tr>
+            <th>DNI</th>
+            <th>Motivo</th>
+            <th>Precio</th>
+            <th>Descripción</th>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Estado</th>
+            <th>Creado en</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for t in turnos %}
+            <tr>
+              <td>{{ t.dni }}</td>
+              <td>{{ t.motivo }}</td>
+                <td class="text-end">
+                  $ 
+                  {% if t.precio %}
+                    {{ t.precio|floatformat:2 }}
+                  {% else %}
+                    {{ t.motivo.precio|floatformat:2 }}
+                  {% endif %}
+                </td>
+              
+              <td>{{ t.descripcion }}</td>
+              <td>{{ t.fecha|date:"d/m/Y" }}</td>
+              <td>{{ t.hora }}</td>
+              <td>{{ t.estado }}</td>
+              <td>{{ t.creado_en }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="9" class="text-center text-muted">
+                No hay turnos cargados.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+
+      </table>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 {% block footer %}
 {% include 'footer.html' %}
 {% endblock %}

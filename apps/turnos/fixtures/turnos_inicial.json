@@ -1,0 +1,9 @@
+[
+  {"model":"turnos.motivo","pk":1,"fields":{"nombre":"Cambio de Banco","descripcion":"","precio":"7000.00","activo":true,"orden":1}},
+  {"model":"turnos.motivo","pk":2,"fields":{"nombre":"Solicitud de repagos","descripcion":"","precio":"7000.00","activo":true,"orden":2}},
+  {"model":"turnos.motivo","pk":3,"fields":{"nombre":"Designación de apoderado","descripcion":"","precio":"7000.00","activo":true,"orden":3}},
+  {"model":"turnos.motivo","pk":4,"fields":{"nombre":"Modificación de datos personales","descripcion":"","precio":"7000.00","activo":true,"orden":4}},
+
+  {"model":"turnos.oficina","pk":1,"fields":{"nombre":"OFICINA CASTELLI (CHACO)","direccion":"Av. Perón 470","ciudad":"Castelli","provincia":"Chaco","activo":true,"orden":1}},
+  {"model":"turnos.oficina","pk":2,"fields":{"nombre":"OFICINA ROQUE SAENZ PEÑA","direccion":"Calle 13 e/ 2 y 4","ciudad":"Sáenz Peña","provincia":"Chaco","activo":true,"orden":2}}
+]
