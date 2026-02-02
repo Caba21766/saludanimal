@@ -155,7 +155,7 @@
             <td>{{ m.fecha|date:"d/m/Y" }}</td>
             <td>{{ m.dni }}</td>
             <td>{{ m.cliente }}</td>
-           <td>{{ m.vendedor|default:"-" }}</td>
+            <td>{{ m.vendedor|default:"-" }}</td>
             <td>
               {% if m.metodo == "Cuenta Corriente" %}
                 <span class="text-danger fw-bold">{{ m.metodo }}</span>
@@ -424,13 +424,14 @@
         <thead class="table-dark">
           <tr>
             <th>DNI</th>
+            <th>Cliente</th>
             <th>Motivo</th>
             <th>Precio</th>
-            <th>Descripción</th>
+            <!--<th>Descripción</th>-->
             <th>Fecha</th>
             <th>Hora</th>
             <th>Estado</th>
-            <th>Creado en</th>
+            <th>Pedido en</th>
           </tr>
         </thead>
 
@@ -438,17 +439,19 @@
           {% for t in turnos %}
             <tr>
               <td>{{ t.dni }}</td>
+              <td>{{ t.cliente_nombre|default:"-" }}</td>
               <td>{{ t.motivo }}</td>
-                <td class="text-end">
+
+              <td class="text-end">
                   $ 
                   {% if t.precio %}
                     {{ t.precio|floatformat:2 }}
                   {% else %}
                     {{ t.motivo.precio|floatformat:2 }}
                   {% endif %}
-                </td>
+              </td>
               
-              <td>{{ t.descripcion }}</td>
+              <!--<td>{{ t.descripcion }}</td>-->
               <td>{{ t.fecha|date:"d/m/Y" }}</td>
               <td>{{ t.hora }}</td>
               <td>{{ t.estado }}</td>

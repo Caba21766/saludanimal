@@ -1,34 +1,105 @@
 {% load static %}
 
-<footer class="bg-dark text-white py-4">
+<style>
+  /* Footer base */
+  .site-footer{
+    background: #111827; /* más elegante que bg-dark */
+    color: #fff;
+  }
+  .site-footer hr{
+    border-color: rgba(255,255,255,.14) !important;
+  }
+
+  /* Botones de redes (todos iguales) */
+  .social-link{
+    width: 46px;
+    height: 46px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,.10);
+    border: 1px solid rgba(255,255,255,.14);
+    transition: transform .2s ease, background .2s ease, opacity .2s ease;
+    opacity: .92;
+  }
+  .social-link:hover{
+    opacity: 1;
+    transform: translateY(-1px);
+    background: rgba(255,255,255,.16);
+  }
+  .social-link img{
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+  }
+
+  /* Bloque del escudo + texto (para que combine mejor) */
+  .brand-badge{
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    padding: .35rem .65rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,.10);
+    border: 1px solid rgba(255,255,255,.14);
+  }
+  .brand-badge img{
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+    border-radius: 10px;
+    /* si tu escudo tiene un “cuadro blanco”, esto ayuda a que se vea integrado */
+    background: rgba(255,255,255,.85);
+    padding: 4px;
+  }
+
+  .site-footer hr{
+  border-top: 1px solid rgba(255,255,255,.18);
+  opacity: 1;
+  }
+</style>
+
+<footer class="site-footer py-4">
   <div class="container">
-    <div class="row text-center text-md-start">
+    <div class="row text-center text-md-start align-items-start">
+
+      <!-- Redes -->
       <div class="col-12 col-md-6 mb-3 mb-md-0">
-        <h4>Mis redes</h4>
-        <a href="https://www.Facebook.com/" target="_blank" class="me-2">
-          <i class="bi bi-facebook fs-3 text-white"></i>
-        </a>
-        <a href="https://twitter.com/" target="_blank" class="me-2">
-          <i class="bi bi-google fs-3 text-white"></i>
-        </a>
-        <a href="https://twitter.com/" target="_blank">
-          <i class="bi bi-instagram fs-3 text-white"></i>
-        </a>
+        <h4 class="mb-3">Mis redes</h4>
+
+        <div class="d-flex justify-content-center justify-content-md-start gap-3">
+          <a href="https://www.facebook.com/emilce.caballero1" target="_blank" rel="noopener" class="social-link">
+            <img src="{% static 'img/facebook-icon.png' %}" alt="Facebook">
+          </a>
+
+          <a href="https://www.google.com/search?q=Salud+Animal+tres Salud%20Animal%20Tres%20Isletas%20Chaco+Chaco" target="_blank" rel="noopener" class="social-link">
+            <img src="{% static 'img/google.jpeg' %}" alt="Google">
+          </a>
+
+          <a href="https://www.instagram.com/emi22_22/" target="_blank" rel="noopener" class="social-link">
+            <img src="{% static 'img/instagran.jpg' %}" alt="Instagram">
+          </a>
+        </div>
       </div>
 
+      <!-- Contacto -->
       <div class="col-12 col-md-6">
-        <h4>Contáctame</h4>
-        <p>Cel: 3644-358404</p>
+        <h4 class="mb-3">Contáctame</h4>
+        <p class="mb-1">Cel: 3794-189031</p>
       </div>
     </div>
 
-    <div class="d-flex justify-content-between align-items-center border-top pt-3 mt-4">
-      <p class="mb-0 ms-3">&copy; Copyright 2025 - Gustavo Caballero</p>
+    <hr class="my-4" style="border-color: rgba(255,255,255,.18); opacity:1;">
 
-      <div class="d-flex align-items-center me-3">
-        <img src="{% static 'img/escudoinfor.png' %}" alt="Logo"
-             style="width: 40px; height: 40px; border-radius: 10%; object-fit: cover;">
-        <span class="ms-2">Instituto de Informática</span>
+
+
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+      <p class="mb-0">&copy; Copyright 2025 - Gustavo Caballero</p>
+
+      <div class="brand-badge">
+        <img src="{% static 'img/escudoinformatica1.png' %}" alt="Logo Instituto en Informática">
+        <span>Instituto en Informática</span>
       </div>
     </div>
   </div>

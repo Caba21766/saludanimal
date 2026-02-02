@@ -818,9 +818,6 @@ def lista_cierre_de_caja(request):
         total=Sum('imp_cuota_pagadas') + Sum('entrega_cta')
     )['total'] or 0
 
-
-   
-
     # ---------------------------------------------------------------------
     # 👇 NUEVO: Unificar facturas + pagos en "movimientos" y ordenar por fecha
     movimientos = []
@@ -900,8 +897,36 @@ def lista_cierre_de_caja(request):
 
     turnos_qs = turnos_qs.order_by('-fecha', '-hora')
 
+    User = get_user_model()
 
-    # ==========================
+    # Traemos turnos como lista (para poder agregar atributo cliente_nombre)
+    turnos_list = list(turnos_qs.select_related('motivo', 'oficina'))
+
+    # Armamos mapa DNI -> Nombre Apellido desde tu User (dni_usuario)
+    dnis = {t.dni for t in turnos_list if t.dni}
+    usuarios = User.objects.filter(dni_usuario__in=dnis)
+
+    mapa = {}
+    for u in usuarios:
+        # intenta get_full_name / first_name+last_name / fallback str(u)
+        nombre = ""
+        if hasattr(u, "get_full_name"):
+            nombre = (u.get_full_name() or "").strip()
+        if not nombre:
+            fn = (getattr(u, "first_name", "") or "").strip()
+            ln = (getattr(u, "last_name", "") or "").strip()
+            nombre = f"{fn} {ln}".strip()
+        if not nombre:
+            nombre = str(u).strip()
+
+        mapa[getattr(u, "dni_usuario", None)] = nombre or "-"
+
+    # Asignamos el nombre al turno
+    for t in turnos_list:
+        t.cliente_nombre = mapa.get(t.dni, "-")
+
+
+# ==========================
 # ✅ TOTAL PRECIO DE TURNOS (con filtro)
 # ==========================
     try:
@@ -937,7 +962,6 @@ def lista_cierre_de_caja(request):
     # ---------------------------------------------------------------------
     # ---------------------------------------------------------------------
 
-
     return render(request, 'CarritoApp/lista_cierre_de_caja.html', {
         'facturas': facturas,
         'vendedor': vendedor,
@@ -960,7 +984,7 @@ def lista_cierre_de_caja(request):
         'resumen_metodos': resumen_metodos,
         'cobro_cta_corriente': cobro_cta_corriente,
         'total_importe': total_importe,  # ✅ ESTA ES LA CLAVE
-        'turnos': turnos_qs,
+        'turnos': turnos_list,
         
     })
 
